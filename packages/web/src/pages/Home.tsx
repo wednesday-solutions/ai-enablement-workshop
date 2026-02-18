@@ -76,56 +76,119 @@ function Home() {
 
   if (loading) {
     return (
-      <div style={{ textAlign: 'center', padding: '40px' }}>
-        <div style={{ fontSize: '24px' }}>Loading...</div>
-        <div style={{ fontSize: '48px', marginTop: '10px' }}>⏳</div>
+      <div className="sp-page" style={{ display: 'flex', alignItems: 'center', justifyContent: 'center', minHeight: '60vh' }}>
+        <div style={{ textAlign: 'center' }}>
+          <div style={{
+            width: '48px',
+            height: '48px',
+            borderRadius: '50%',
+            background: 'var(--brand-gradient)',
+            margin: '0 auto 16px',
+            animation: 'pulse 1.5s ease-in-out infinite',
+            opacity: 0.8,
+          }} />
+          <p style={{ fontFamily: "'DM Sans', sans-serif", color: 'var(--text-body)', fontSize: '15px' }}>
+            Loading movies…
+          </p>
+        </div>
+        <style>{`@keyframes pulse { 0%,100%{opacity:.8;transform:scale(1)} 50%{opacity:.5;transform:scale(.92)} }`}</style>
       </div>
     );
   }
 
   return (
-    <div>
-      <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>Now Showing</h1>
+    <div className="sp-page">
+      {/* Hero label + heading */}
+      <div style={{ marginBottom: '36px' }}>
+        <p className="sp-label" style={{ marginBottom: '10px' }}>Now Showing</p>
+        <h1 style={{
+          fontFamily: "'Instrument Serif', serif",
+          fontSize: '44px',
+          fontWeight: 400,
+          color: 'var(--text-primary)',
+          letterSpacing: '-0.02em',
+          lineHeight: 1.1,
+          margin: 0,
+        }}>
+          Find your next<br />
+          <span style={{ fontStyle: 'italic', color: 'var(--text-body)' }}>great night out.</span>
+        </h1>
+      </div>
 
       {/* Filters */}
-      <div style={{ marginBottom: '15px', background: '#e0e0e0', padding: '10px' }}>
+      <div style={{
+        display: 'flex',
+        alignItems: 'center',
+        gap: '12px',
+        marginBottom: '32px',
+        flexWrap: 'wrap',
+      }}>
         <input
           type="text"
-          placeholder="Search movies..."
+          className="sp-input"
+          placeholder={'Search movies…'}
           value={search}
           onChange={handleSearchChange}
-          style={{ width: '300px' }}
+          style={{ maxWidth: '280px' }}
         />
-        <select value={selectedGenre} onChange={handleGenreChange}>
+        <select className="sp-select" value={selectedGenre} onChange={handleGenreChange}>
           <option value="">All Genres</option>
           {genres.map(g => (
             <option key={g} value={g}>{g}</option>
           ))}
         </select>
-        <span style={{ marginLeft: '10px', color: '#666' }}>
-          {filteredMovies.length} movies found
+        <span style={{
+          fontFamily: "'DM Sans', sans-serif",
+          fontSize: '13px',
+          color: 'var(--text-muted)',
+        }}>
+          {filteredMovies.length} {filteredMovies.length === 1 ? 'film' : 'films'}
         </span>
       </div>
 
       {/* Movie grid */}
-      <div>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(220px, 1fr))', gap: '20px' }}>
         {filteredMovies.map(movie => (
-          <div key={movie.id} className="movie-card">
+          <div key={movie.id} className="sp-movie-card">
             <img
               src={movie.poster_url}
               alt={movie.title}
-              onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x450?text=No+Image'; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/300x450/f5f5f5/a3a3a3?text=No+Image'; }}
             />
-            <h3 style={{ fontSize: '16px', margin: '8px 0 4px' }}>{movie.title}</h3>
-            <p style={{ fontSize: '12px', color: '#666', margin: '2px 0' }}>
-              {movie.genre} | {movie.duration} min | {movie.language}
-            </p>
-            <p style={{ fontSize: '14px', margin: '4px 0' }}>
-              ⭐ {movie.rating ? movie.rating.toFixed(1) : 'N/A'}/10
-            </p>
-            <Link to={`/movie/${movie.id}`}>
-              <button style={{ width: '100%', marginTop: '8px' }}>Book Now</button>
-            </Link>
+            <div className="sp-movie-card-body">
+              <h3 style={{
+                fontFamily: "'Instrument Serif', serif",
+                fontSize: '18px',
+                fontWeight: 400,
+                color: 'var(--text-primary)',
+                margin: 0,
+                lineHeight: 1.25,
+              }}>
+                {movie.title}
+              </h3>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '12px',
+                color: 'var(--text-muted)',
+                margin: 0,
+              }}>
+                {movie.genre} · {movie.duration} min · {movie.language}
+              </p>
+              <p style={{
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '13px',
+                fontWeight: 600,
+                color: 'var(--text-secondary)',
+                margin: 0,
+              }}>
+                {movie.rating ? movie.rating.toFixed(1) : 'N/A'} <span style={{ fontWeight: 400, color: 'var(--text-muted)' }}>/ 10</span>
+              </p>
+              <Link to={`/movie/${movie.id}`} style={{ marginTop: '4px' }}>
+                <button className="sp-btn-primary" style={{ width: '100%', padding: '9px' }}>
+                  Book Now
+                </button>
+              </Link>
+            </div>
           </div>
         ))}
       </div>

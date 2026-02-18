@@ -13,23 +13,36 @@ function Header() {
   const { user, logout } = useAuth();
 
   return (
-    <div className="header">
-      <div>
-        <Link to="/" style={{ fontSize: '20px', fontWeight: 'bold' }}>StagePass</Link>
-      </div>
-      <div>
-        <Link to="/">Home</Link>
+    <nav className="sp-nav">
+      <Link to="/" className="sp-logo">
+        <div className="sp-logo-mark" />
+        StagePass
+      </Link>
+
+      <div style={{ display: 'flex', alignItems: 'center', gap: '8px' }}>
+        <Link to="/" className="sp-nav-link">Home</Link>
         {user ? (
           <>
-            <Link to="/bookings">My Bookings</Link>
-            <span style={{ margin: '0 10px' }}>Hi, {user.name}</span>
-            <button onClick={logout} style={{ background: 'transparent', border: '1px solid white', padding: '4px 8px' }}>Logout</button>
+            <Link to="/bookings" className="sp-nav-link">My Bookings</Link>
+            <span style={{
+              fontFamily: "'DM Sans', sans-serif",
+              fontSize: '14px',
+              color: 'var(--text-body)',
+              padding: '0 8px',
+            }}>
+              {user.name}
+            </span>
+            <button className="sp-btn-ghost" onClick={logout}>Logout</button>
           </>
         ) : (
-          <Link to="/login">Login</Link>
+          <Link to="/login">
+            <button className="sp-btn-primary" style={{ padding: '8px 20px', fontSize: '14px' }}>
+              Sign In
+            </button>
+          </Link>
         )}
       </div>
-    </div>
+    </nav>
   );
 }
 
@@ -38,18 +51,16 @@ function App() {
     <BrowserRouter>
       <AuthProvider>
         <Header />
-        <div style={{ padding: '20px' }}>
-          <ErrorBoundary>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/movie/:id" element={<MovieDetail />} />
-              <Route path="/seats/:showtimeId" element={<SeatSelection />} />
-              <Route path="/booking-confirmation/:bookingId" element={<BookingConfirmation />} />
-              <Route path="/bookings" element={<MyBookings />} />
-              <Route path="/login" element={<Login />} />
-            </Routes>
-          </ErrorBoundary>
-        </div>
+        <ErrorBoundary>
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/movie/:id" element={<MovieDetail />} />
+            <Route path="/seats/:showtimeId" element={<SeatSelection />} />
+            <Route path="/booking-confirmation/:bookingId" element={<BookingConfirmation />} />
+            <Route path="/bookings" element={<MyBookings />} />
+            <Route path="/login" element={<Login />} />
+          </Routes>
+        </ErrorBoundary>
       </AuthProvider>
     </BrowserRouter>
   );

@@ -53,51 +53,51 @@ beforeEach(() => {
 describe('SeatSelection — toggleSeat', () => {
   it('adds a seat to selection when clicked', async () => {
     renderSeatSelection()
-    await waitFor(() => expect(screen.queryByText('Loading seats...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTitle('A1')).toBeInTheDocument())
 
-    expect(screen.getByText(/Selected: 0 seat/)).toBeInTheDocument()
+    expect(screen.getByText('No seats selected')).toBeInTheDocument()
 
     const seat = screen.getByTitle('A1')
     await userEvent.click(seat)
 
-    expect(screen.getByText(/Selected: 1 seat/)).toBeInTheDocument()
+    expect(screen.getByText('1 seat selected')).toBeInTheDocument()
   })
 
   it('removes a seat from selection when clicked a second time', async () => {
     renderSeatSelection()
-    await waitFor(() => expect(screen.queryByText('Loading seats...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTitle('A1')).toBeInTheDocument())
 
     const seat = screen.getByTitle('A1')
 
     await userEvent.click(seat)
-    expect(screen.getByText(/Selected: 1 seat/)).toBeInTheDocument()
+    expect(screen.getByText('1 seat selected')).toBeInTheDocument()
 
     await userEvent.click(seat)
-    expect(screen.getByText(/Selected: 0 seat/)).toBeInTheDocument()
+    expect(screen.getByText('No seats selected')).toBeInTheDocument()
   })
 
   it('does not allow selecting a booked seat', async () => {
     renderSeatSelection()
-    await waitFor(() => expect(screen.queryByText('Loading seats...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTitle('A3')).toBeInTheDocument())
 
     const bookedSeat = screen.getByTitle('A3')
     await userEvent.click(bookedSeat)
 
-    expect(screen.getByText(/Selected: 0 seat/)).toBeInTheDocument()
+    expect(screen.getByText('No seats selected')).toBeInTheDocument()
   })
 
   it('can select multiple seats independently', async () => {
     renderSeatSelection()
-    await waitFor(() => expect(screen.queryByText('Loading seats...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.getByTitle('A1')).toBeInTheDocument())
 
     await userEvent.click(screen.getByTitle('A1'))
     await userEvent.click(screen.getByTitle('A2'))
-    expect(screen.getByText(/Selected: 2 seat/)).toBeInTheDocument()
+    expect(screen.getByText('2 seats selected')).toBeInTheDocument()
 
     await userEvent.click(screen.getByTitle('A1'))
-    expect(screen.getByText(/Selected: 1 seat/)).toBeInTheDocument()
+    expect(screen.getByText('1 seat selected')).toBeInTheDocument()
 
     await userEvent.click(screen.getByTitle('A2'))
-    expect(screen.getByText(/Selected: 0 seat/)).toBeInTheDocument()
+    expect(screen.getByText('No seats selected')).toBeInTheDocument()
   })
 })
