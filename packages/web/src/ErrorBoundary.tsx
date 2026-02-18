@@ -1,4 +1,4 @@
-import React, { Component, ReactNode } from 'react';
+import React, { Component, ErrorInfo, ReactNode } from 'react';
 
 interface Props {
   children: ReactNode;
@@ -6,30 +6,33 @@ interface Props {
 
 interface State {
   hasError: boolean;
-  error: Error | null;
 }
 
 class ErrorBoundary extends Component<Props, State> {
   constructor(props: Props) {
     super(props);
-    this.state = { hasError: false, error: null };
+    this.state = { hasError: false };
   }
 
-  static getDerivedStateFromError(error: Error): State {
-    return { hasError: true, error };
+  static getDerivedStateFromError(): State {
+    return { hasError: true };
   }
 
-  render() {
+  componentDidCatch(error: Error, info: ErrorInfo): void {
+    console.error('ErrorBoundary caught an error:', error, info.componentStack);
+  }
+
+  render(): ReactNode {
     if (this.state.hasError) {
       return (
         <div style={{ textAlign: 'center', padding: '60px 20px' }}>
           <h2>Something went wrong.</h2>
           <p style={{ color: '#666', marginTop: '8px' }}>
-            {this.state.error?.message ?? 'An unexpected error occurred.'}
+            An unexpected error occurred. Please refresh the page to try again.
           </p>
           <button
-            onClick={() => this.setState({ hasError: false, error: null })}
             style={{ marginTop: '20px' }}
+            onClick={() => this.setState({ hasError: false })}
           >
             Try again
           </button>
