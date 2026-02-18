@@ -6,11 +6,11 @@ interface Movie {
   title: string;
   genre: string;
   duration: number;
-  rating: number;
+  rating: number | null;
   poster_url: string;
-  synopsis: string;
+  synopsis: string | null;
   director: string;
-  cast_members: string;
+  cast_members: string | null;
   release_date: string;
   language: string;
 }
@@ -77,8 +77,7 @@ function MovieDetail() {
             <b>Director:</b> {movie!.director}
           </p>
           <p>
-            {/* BUG: Calling .split on potentially null cast_members - crashes for "Untitled Project X" */}
-            <b>Cast:</b> {movie!.cast_members.split(',').join(' | ')}
+            <b>Cast:</b> {(movie!.cast_members ?? '').split(',').join(' | ')}
           </p>
           <p style={{ marginTop: '10px', lineHeight: '1.6' }}>
             {/* BUG: Accessing .length on potentially null synopsis */}
