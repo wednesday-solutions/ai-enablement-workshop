@@ -68,4 +68,11 @@ describe('MovieDetail — null field handling', () => {
     await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
     expect(screen.getByText(/Actor One \| Actor Two/)).toBeInTheDocument()
   })
+
+  it('shows "Movie not found." when API returns null', async () => {
+    mockFetch(null as unknown as object)
+    renderMovieDetail({})
+    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    expect(screen.getByText('Movie not found.')).toBeInTheDocument()
+  })
 })

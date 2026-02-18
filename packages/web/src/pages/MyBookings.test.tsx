@@ -68,6 +68,24 @@ describe('MyBookings — loading state', () => {
     expect(screen.getByText(/₹700/)).toBeInTheDocument()
   })
 
+  it('stops the spinner even when the fetch request fails (network error)', async () => {
+    vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
+      user: { id: 1, name: 'Test User', email: 'test@example.com' },
+      token: 'fake-token',
+      login: vi.fn(),
+      signup: vi.fn(),
+      logout: vi.fn(),
+    })
+
+    global.fetch = vi.fn().mockRejectedValue(new Error('Network failure'))
+
+    renderMyBookings()
+
+    await waitFor(() => expect(screen.queryByText(/Loading your bookings/)).not.toBeInTheDocument())
+    // Loading resolved — empty state is shown because bookings array was never set
+    expect(screen.getByText(/No bookings yet/)).toBeInTheDocument()
+  })
+
   it('shows login prompt when user is not authenticated', () => {
     vi.spyOn(AuthContext, 'useAuth').mockReturnValue({
       user: null,
