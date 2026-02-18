@@ -1,8 +1,9 @@
-import db from './db';
+import 'dotenv/config';
 import bcrypt from 'bcryptjs';
+import db from './db';
 
 if (process.env.NODE_ENV === 'production') {
-  console.error('ERROR: seed.ts must not be run in production');
+  console.error('ERROR: seed.ts must not be run against a production database.');
   process.exit(1);
 }
 
