@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 
 interface Movie {
@@ -20,65 +20,65 @@ function Home() {
   const [genres, setGenres] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch('/api/movies')
+    void fetch('/api/movies')
       .then(res => res.json())
-      .then(data => {
+      .then((data: Movie[]) => {
         setMovies(data);
+        setLoading(false);
+      })
+      .catch(() => {
         setLoading(false);
       });
 
-    fetch('/api/movies/meta/genres')
+    void fetch('/api/movies/meta/genres')
       .then(res => res.json())
-      .then(data => setGenres(data));
+      .then((data: string[]) => setGenres(data))
+      .catch(() => {});
   }, []);
 
-  // BUG: Search is implemented with a blocking computation that freezes the UI
-  const filteredMovies = (() => {
+  const filteredMovies = useMemo(() => {
     let result = movies;
-
     if (selectedGenre) {
       result = result.filter(m => m.genre === selectedGenre);
     }
-
     if (search) {
-      // Intentionally terrible: blocking main thread with heavy computation
-      const start = Date.now();
-      while (Date.now() - start < 2000) {
-        // Simulate heavy search computation
-        Math.random();
-      }
-      result = result.filter(m =>
-        m.title.toLowerCase().includes(search.toLowerCase())
-      );
+      const term = search.toLowerCase();
+      result = result.filter(m => m.title.toLowerCase().includes(term));
     }
-
     return result;
-  })();
+  }, [movies, search, selectedGenre]);
+
+  const handleSearchChange = useCallback((e: React.ChangeEvent<HTMLInputElement>) => {
+    setSearch(e.target.value);
+  }, []);
+
+  const handleGenreChange = useCallback((e: React.ChangeEvent<HTMLSelectElement>) => {
+    setSelectedGenre(e.target.value);
+  }, []);
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '40px' }}>
-      <div style={{ fontSize: '24px' }}>Loading...</div>
-      <div style={{ fontSize: '48px', marginTop: '10px' }}>⏳</div>
-    </div>;
+    return (
+      <div style={{ textAlign: 'center', padding: '40px' }}>
+        <div style={{ fontSize: '24px' }}>Loading...</div>
+        <div style={{ fontSize: '48px', marginTop: '10px' }}>⏳</div>
+      </div>
+    );
   }
 
   return (
     <div>
       <h1 style={{ fontSize: '24px', marginBottom: '10px' }}>Now Showing</h1>
 
-      {/* Filters - ugly layout */}
+      {/* Filters */}
       <div style={{ marginBottom: '15px', background: '#e0e0e0', padding: '10px' }}>
         <input
           type="text"
           placeholder="Search movies..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={handleSearchChange}
           style={{ width: '300px' }}
         />
-        <select
-          value={selectedGenre}
-          onChange={e => setSelectedGenre(e.target.value)}
-        >
+        <select value={selectedGenre} onChange={handleGenreChange}>
           <option value="">All Genres</option>
           {genres.map(g => (
             <option key={g} value={g}>{g}</option>
@@ -89,14 +89,14 @@ function Home() {
         </span>
       </div>
 
-      {/* Movie grid - inconsistent inline styles */}
+      {/* Movie grid */}
       <div>
         {filteredMovies.map(movie => (
           <div key={movie.id} className="movie-card">
             <img
               src={movie.poster_url}
               alt={movie.title}
-              onError={(e: any) => { e.target.src = 'https://via.placeholder.com/300x450?text=No+Image'; }}
+              onError={(e) => { (e.target as HTMLImageElement).src = 'https://via.placeholder.com/300x450?text=No+Image'; }}
             />
             <h3 style={{ fontSize: '16px', margin: '8px 0 4px' }}>{movie.title}</h3>
             <p style={{ fontSize: '12px', color: '#666', margin: '2px 0' }}>
