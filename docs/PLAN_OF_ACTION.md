@@ -214,6 +214,8 @@ git commit -m "chore: add ESLint, SonarJS, Prettier, Commitlint, Husky — quali
 
 > Goal: Systematically fix issues in priority order — crashes first, then performance, then security, then quality.
 
+> **Rule: every fix ships with unit and integration tests in the same PR.** A fix without a test is incomplete — the test proves the bug is gone and prevents regression. Only E2E tests are deferred to Phase 3. Set up Vitest + React Testing Library + Supertest before starting Phase 2 fixes (see Phase 3.1 setup below — do it first).
+
 ### Priority 1 — Crash Fixes (do these first, they block demos)
 
 | Ref | File | Fix |
@@ -276,7 +278,7 @@ pnpm --filter @stagepass/web add framer-motion
 
 ## Phase 3: Test Plan
 
-> Goal: Add meaningful test coverage, not just lines for vanity metrics.
+> Goal: E2E test coverage only. Unit and integration tests were written alongside each Phase 2 fix — do not defer them here.
 
 ### 3.1 Setup Vitest (unit + integration)
 
@@ -292,35 +294,15 @@ Add to each `package.json`:
 "test:coverage": "vitest run --coverage"
 ```
 
-### 3.2 Unit tests — Frontend
+### 3.2 E2E tests (Playwright)
 
-**Target files and what to test:**
+- Full booking flow in a real browser: browse → select showtime → select seats → confirm → verify booking appears in My Bookings
+- Auth flows: signup, login, logout, session persists after page refresh
+- Unauthenticated access redirects to login
+- "Untitled Project X" renders gracefully (not blank screen)
+- New user My Bookings shows empty state (not infinite spinner)
 
-| File | Tests |
-|------|-------|
-| `SeatSelection.tsx` | `toggleSeat` correctly adds/removes seat IDs without mutation |
-| `Home.tsx` | Filter logic returns correct subset; search is not blocking |
-| `AuthContext.tsx` | Login stores token; logout clears state; refresh rehydrates |
-| `MovieDetail.tsx` | Renders gracefully when `cast_members` or `synopsis` is null |
-| `MyBookings.tsx` | Shows empty state when booking array is empty, not a spinner |
-
-### 3.3 Unit tests — Backend
-
-| File | Tests |
-|------|-------|
-| `auth.ts` | Login with correct credentials returns JWT; wrong password returns 401 |
-| `auth.ts` | Signup hashes password — DB-stored value does not equal plain text input |
-| `bookings.ts` | POST `/bookings` without token returns 401 |
-| `bookings.ts` | POST `/bookings` marks seats as booked in DB |
-| `movies.ts` | GET `/movies?genre=Action` returns only Action movies |
-| `movies.ts` | GET `/movies?search=inception` returns matching movies |
-
-### 3.4 Integration tests
-
-- Full booking flow: browse → select showtime → select seats → confirm → verify in DB
-- Auth flow: signup → login → access protected route → refresh token
-
-### 3.5 Coverage targets
+### 3.3 Coverage targets
 
 | Package | Target |
 |---------|--------|
@@ -508,7 +490,7 @@ Phase 0  Understand       Read code, reproduce bugs, review docs/ISSUES_IN_THE_C
 Phase 1  Tooling          ESLint + SonarJS + Prettier + Commitlint + Husky; capture lint baseline
 Phase 2  Fix              Crashes (2a) → ErrorBoundary (2b) → Performance (2c)
                           → Security (2d) → Memoria UI (2e) → Code Quality (2f)
-Phase 3  Test             Unit (3a) + Integration (3b) + E2E Playwright (3c); coverage thresholds
+Phase 3  Test             E2E Playwright only; unit + integration tests written in Phase 2 PRs
 Phase 4  CI               GitHub Actions: lint → test → Sonar scan → quality gate
 Phase 5  Deploy           Docker + docker-compose + deploy job in CI
 ```
