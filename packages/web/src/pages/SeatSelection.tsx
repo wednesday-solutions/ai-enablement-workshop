@@ -103,9 +103,8 @@ function SeatSelection() {
   });
 
   const n = selectedSeats.length;
-  const seatSummary = n === 0
-    ? 'No seats selected'
-    : `${n} seat${n > 1 ? 's' : ''} selected`;
+  const seatPlural = n === 1 ? 'seat' : 'seats';
+  const seatSummary = n === 0 ? 'No seats selected' : `${n} ${seatPlural} selected`;
 
   return (
     <div className="sp-page">
