@@ -113,4 +113,15 @@ describe('Home — search and genre filter', () => {
     renderHome()
     await waitFor(() => expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to fetch genres:', fetchError))
   })
+
+  it('does not log console.error when fetch is aborted (component unmount)', async () => {
+    const abortError = Object.assign(new Error('Aborted'), { name: 'AbortError' })
+    global.fetch = vi.fn().mockRejectedValue(abortError)
+
+    renderHome()
+    // Wait for promises to settle
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+  })
 })
