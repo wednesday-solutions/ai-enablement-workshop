@@ -234,6 +234,35 @@ git commit -m "chore: add ESLint, SonarJS, Prettier, Commitlint, Husky — quali
 | 2.3 | `Home.tsx` | Wrap filter logic in `useMemo`, wrap handlers in `useCallback` |
 | 2.2 | `Home.tsx` | Add client-side pagination (show 12 at a time, "Load More") |
 
+### 2c+ — Fetch Error Logging (Gemini review follow-up)
+
+> Flagged in the Gemini code review on PR #5 — two inline comments on `Home.tsx`.
+
+| Ref | File | Fix |
+|-----|------|-----|
+| G1 | `Home.tsx` line 23 | Remove `void` from `fetch(...)` calls — non-idiomatic in TypeScript |
+| G2 | `Home.tsx` line 36 | Replace silent `.catch(() => {})` with logged catches — silent no-ops hide errors in prod |
+
+```tsx
+// Before
+.catch(() => {})
+
+// After (movies fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch movies:', err);
+})
+
+// After (genres fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch genres:', err);
+})
+```
+
+**Tests to write (same PR):**
+- `Home.test.tsx`: when movies fetch fails, `console.error` is called with the error; when genres fetch fails, `console.error` is called with the error
+
+---
+
 ### Priority 3 — Security
 
 | Ref | File | Fix |
@@ -245,18 +274,19 @@ git commit -m "chore: add ESLint, SonarJS, Prettier, Commitlint, Husky — quali
 | 3.6 | `AuthContext.tsx` | Persist token to `localStorage`, rehydrate on mount |
 | 4.6 | All | Add `.env` + `dotenv`, add `.env.example`, add `.env` to `.gitignore` |
 
-### Priority 4 — Design System (Memoria)
+### Priority 4 — Design System (Light Green)
 
 > This is the "Write" phase showpiece. Transform the UI from ugly to polished.
 
-Apply the [Memoria design system](https://gist.github.com/alichherawalla/8234538a50f9d089e0159c3e3634e17c) across all pages:
+Apply the design system defined in [`docs/DESIGN_SYSTEM_GUIDE.md`](./DESIGN_SYSTEM_GUIDE.md) across all pages. Core principles: light warm-neutral base (`#FFFFFF` / `#FAFAFA`), green-to-teal brand gradient used sparingly for CTAs and accents, `Instrument Serif` for headlines + `DM Sans` for body, multi-layer card shadows, staggered scroll-driven animations.
 
-- **Global:** Switch to `bg-neutral-950` base, `text-white/neutral-*` hierarchy, no accent colors
-- **Home:** Dark card grid with poster, rating as hero number, staggered entry animation
-- **MovieDetail:** Split layout with blur-in animation, showtimes as styled pill buttons
-- **SeatSelection:** Dark grid, green/red/blue seat states, screen label at top
-- **MyBookings:** Timeline-style booking cards, booking amount as hero number
-- **All modals/overlays:** `BorderBeam` effect, spring-based 3D entry animation
+- **Global:** CSS variables from the design guide, Google Fonts import (`Instrument Serif` + `DM Sans`), remove legacy inline styles
+- **Header:** Extract to `components/Header.tsx`, apply nav layout from the guide
+- **Home:** White card grid with shadow lift on hover, brand gradient rating badge, staggered card entry animation
+- **MovieDetail:** Serif headline, blur-in transition, green pill showtime buttons
+- **SeatSelection:** Neutral grid, green selected state, brand gradient confirm button
+- **MyBookings:** Stat-display booking amount (large number, small label), lifted white cards
+- **BookingConfirmation:** Spring modal entry animation
 
 Install animation library:
 
@@ -475,7 +505,7 @@ Phase 0    Understand       Read code, reproduce bugs, review docs/ISSUES_IN_THE
 Phase 1    Tooling          ESLint + SonarJS + Prettier + Commitlint + Husky; lint baseline
 Phase 2a   Fix + Tests      Crash fixes; unit tests in the same PR
 Phase 2.ci CI Pipeline      GitHub Actions — gates every subsequent PR automatically
-Phase 2b–f Fix + Tests      ErrorBoundary → Performance → Security → Memoria → Quality
+Phase 2b–f Fix + Tests      ErrorBoundary → Performance → Fetch error logging → Security → Memoria → Quality
                              Each PR includes unit + integration tests for its own changes
 Phase 3    E2E Tests        Playwright; full user journeys in a real browser
 Phase 4    Deploy           Docker + docker-compose + deploy job in CI
@@ -493,7 +523,7 @@ The codebase is considered "done" when:
 - [ ] Commitlint + Husky enforce commit format and lint on every commit
 - [ ] Server test coverage ≥ 70%, web ≥ 60%
 - [ ] E2E tests cover the full booking flow in a real browser
-- [ ] Memoria design system applied to all 5 pages
+- [ ] Light green design system (docs/DESIGN_SYSTEM_GUIDE.md) applied to all pages
 - [ ] Passwords hashed, JWT secret in `.env`, rate limiting on auth
 - [ ] CI pipeline is in place from Phase 2.ci and passes on every push to `main`
 - [ ] App runs via `docker compose up`

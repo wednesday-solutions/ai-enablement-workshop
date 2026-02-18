@@ -79,6 +79,7 @@ Each session is self-contained. Start a new Claude Code session, tell it to work
 | **ci** | `ci/github-actions` | `.github/workflows/ci.yml` (new) | `ci: add GitHub Actions pipeline — lint, test, coverage` |
 | **2b** | `feat/error-boundary` | `src/ErrorBoundary.tsx` (new), `App.tsx`, `ErrorBoundary.test.tsx` (new) | `feat: add ErrorBoundary around route tree` |
 | **2c** | `perf/remove-blocking-search` | `Home.tsx`, `Home.test.tsx` | `perf: remove blocking while loop, add useMemo and useCallback` |
+| **2c+** | `fix/home-fetch-errors` | `Home.tsx`, `Home.test.tsx` | `fix: log fetch errors instead of silently swallowing them` |
 | **2d** | `fix/auth-security` | `server/src/routes/auth.ts`, `server/src/seed.ts`, `.env.example`, `AuthContext.tsx`, `auth.test.ts`, `auth.integration.test.ts`, `AuthContext.test.tsx` | `fix: hash passwords, move JWT secret to env, add rate limiting, persist token` |
 | **2e** | `feat/memoria-design-system` | All `pages/*.tsx`, `App.tsx`, `index.css`, snapshot tests | `feat: apply Memoria dark design system across all pages` |
 | **2f** | `refactor/code-quality` | `server/src/routes/*.ts`, `server/src/constants.ts` (new), `server/src/seed.ts` | `refactor: typed routes, extract magic strings, add seed guard` |
@@ -104,6 +105,7 @@ The session will have everything it needs from those two docs.
 | ci | CI pipeline — gates all subsequent PRs | 20 min |
 | 2b | Add ErrorBoundary + unit tests | 20 min |
 | 2c | Fix performance + unit tests | 20 min |
+| 2c+ | Fix silent fetch error swallowing (Gemini follow-up) | 10 min |
 | 2d | Fix security + unit + integration tests | 60 min |
 | 2e | Apply Memoria design system + snapshot tests | 2 hrs |
 | 2f | Code quality cleanup | 30 min |
@@ -238,6 +240,32 @@ The blocking `while (Date.now() - start < 2000)` loop in `Home.tsx` freezes the 
 **Tests to write (same PR):**
 - `Home.test.tsx`: search filter returns correct subset without blocking; genre filter returns correct subset; combined search + genre filter works correctly
 
+### 2c+ — Fetch Error Logging (Gemini review follow-up)
+
+> Flagged in the Gemini code review on PR #5 ([inline comment on `Home.tsx` line 36](https://github.com/wednesday-solutions/ai-enablement-workshop/pull/5)).
+
+Both `fetch` calls in `Home.tsx` currently use `.catch(() => {})` — a silent no-op that makes failures invisible during debugging and in production logs. Replace with a logged catch:
+
+```tsx
+// Before
+.catch(() => {})
+
+// After (movies fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch movies:', err);
+})
+
+// After (genres fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch genres:', err);
+})
+```
+
+Also remove the `void` keyword from the `fetch(...)` call on line 23 — it is non-idiomatic and unnecessary (Gemini comment on line 23).
+
+**Tests to write (same PR):**
+- `Home.test.tsx`: when movies fetch fails, `console.error` is called with the error; when genres fetch fails, `console.error` is called with the error
+
 ### 2d — Security (Priority: High)
 
 Work through these one at a time — each is its own commit:
@@ -254,21 +282,27 @@ Work through these one at a time — each is its own commit:
 - `auth.integration.test.ts` (integration): full signup → login → access protected route flow against in-memory SQLite; confirms password is hashed in the DB
 - `AuthContext.test.tsx` (unit): login stores token in localStorage; logout clears localStorage; page reload rehydrates user from localStorage
 
-### 2e — Memoria Design System (Priority: Medium)
+### 2e — Light Green Design System (Priority: Medium)
 
-Apply the [Memoria design system](https://gist.github.com/alichherawalla/8234538a50f9d089e0159c3e3634e17c) across the frontend. The core principles: dark monochromatic palette (`bg-neutral-950` base), numbers as heroes (`font-light text-white`), staggered animations via `framer-motion`, no accent colours, no inline styles.
+Apply the design system defined in [`docs/DESIGN_SYSTEM_GUIDE.md`](./DESIGN_SYSTEM_GUIDE.md) across the frontend. Core principles: light warm-neutral base (`#FFFFFF` / `#FAFAFA`), green-to-teal brand gradient used sparingly for accents and CTAs, `Instrument Serif` for headlines + `DM Sans` for body, multi-layer shadows for card depth, staggered animations via `framer-motion`.
+
+Install fonts in `index.html` (Google Fonts import) and `framer-motion`:
+
+```bash
+pnpm --filter @stagepass/web add framer-motion
+```
 
 Tackle one page per commit:
-1. Global theme + remove legacy CSS
-2. Header (extract to its own component)
-3. Home page — dark card grid, staggered entry, hero rating
-4. Movie Detail — blur-in transition, dark showtime pills
-5. Seat Selection — dark grid, white selected state
-6. My Bookings — hero amount, dark cards
+1. Global theme — fonts, CSS variables from the design system, remove legacy inline styles
+2. Header — extract to `components/Header.tsx`, apply nav styling from the guide
+3. Home page — white card grid with shadow lifts, brand gradient rating badge, staggered card entry
+4. Movie Detail — serif headline, blur-in transition, green pill showtimes
+5. Seat Selection — neutral grid, green selected state, brand gradient confirm button
+6. My Bookings — stat-display booking amount, white lifted cards
 7. Booking Confirmation — spring modal entry animation
 
 **Tests to write (same PR):**
-- Snapshot tests for each page after styling is applied — one snapshot per page component. These lock in the design system classes and will fail if a future change accidentally removes Memoria styling.
+- Snapshot tests for each page after styling is applied — one snapshot per page component. These lock in the design system styles and will fail if a future change accidentally removes them.
 
 ### 2f — Code Quality (Priority: Low)
 

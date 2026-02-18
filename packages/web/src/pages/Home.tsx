@@ -20,20 +20,23 @@ function Home() {
   const [genres, setGenres] = useState<string[]>([]);
 
   useEffect(() => {
-    void fetch('/api/movies')
+    fetch('/api/movies')
       .then(res => res.json())
       .then((data: Movie[]) => {
         setMovies(data);
         setLoading(false);
       })
-      .catch(() => {
+      .catch((err: unknown) => {
+        console.error('Failed to fetch movies:', err);
         setLoading(false);
       });
 
-    void fetch('/api/movies/meta/genres')
+    fetch('/api/movies/meta/genres')
       .then(res => res.json())
       .then((data: string[]) => setGenres(data))
-      .catch(() => {});
+      .catch((err: unknown) => {
+        console.error('Failed to fetch genres:', err);
+      });
   }, []);
 
   const filteredMovies = useMemo(() => {
