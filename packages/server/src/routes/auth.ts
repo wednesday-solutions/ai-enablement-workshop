@@ -30,21 +30,42 @@ const signupSchema = z.object({
   password: z.string().min(8),
 });
 
+interface UserRow {
+  id: number;
+  name: string;
+  email: string;
+  password: string;
+}
+
+interface JwtPayload {
+  userId: number;
+}
+
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET environment variable is not set');
   return secret;
 }
 
+// A dummy hash used when user is not found to prevent timing attacks.
+// bcrypt.compare will still run, making the response time consistent.
+const DUMMY_HASH = '$2b$10$abcdefghijklmnopqrstuvuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuuu';
+
 // POST login
 router.post('/login', async (req: Request, res: Response) => {
   const parsed = loginSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  if (!parsed.success) {
+    return res.status(400).json({ errors: parsed.error.issues.map((i) => i.message) });
+  }
   const { email, password } = parsed.data;
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as UserRow | undefined;
 
-  if (!user || !(await bcrypt.compare(password, user.password))) {
+  // Always compare to prevent timing attacks (constant-time response)
+  const hashToCompare = user?.password ?? DUMMY_HASH;
+  const passwordMatch = await bcrypt.compare(password, hashToCompare);
+
+  if (!user || !passwordMatch) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
@@ -55,19 +76,25 @@ router.post('/login', async (req: Request, res: Response) => {
 // POST signup
 router.post('/signup', async (req: Request, res: Response) => {
   const parsed = signupSchema.safeParse(req.body);
-  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  if (!parsed.success) {
+    return res.status(400).json({ errors: parsed.error.issues.map((i) => i.message) });
+  }
   const { name, email, password } = parsed.data;
 
   try {
     const hashed = await bcrypt.hash(password, 10);
-    const result = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(name, email, hashed);
-    const token = jwt.sign({ userId: result.lastInsertRowid }, getJwtSecret(), { expiresIn: '24h' });
+    const result = db
+      .prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)')
+      .run(name, email, hashed);
+    const token = jwt.sign({ userId: result.lastInsertRowid }, getJwtSecret(), {
+      expiresIn: '24h',
+    });
     res.status(201).json({
       token,
-      user: { id: result.lastInsertRowid, name, email }
+      user: { id: result.lastInsertRowid, name, email },
     });
-  } catch (e: any) {
-    if (e.message.includes('UNIQUE')) {
+  } catch (e: unknown) {
+    if (e instanceof Error && e.message.includes('UNIQUE')) {
       return res.status(400).json({ error: 'Email already exists' });
     }
     return res.status(500).json({ error: 'Something went wrong' });
@@ -75,14 +102,18 @@ router.post('/signup', async (req: Request, res: Response) => {
 });
 
 // Middleware
-export function authenticateToken(req: any, res: Response, next: NextFunction) {
+export function authenticateToken(
+  req: Request & { userId?: number },
+  res: Response,
+  next: NextFunction
+) {
   const authHeader = req.headers['authorization'];
-  const token = authHeader && authHeader.split(' ')[1];
+  const token = authHeader?.split(' ')[1];
 
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
   try {
-    const decoded = jwt.verify(token, getJwtSecret()) as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as JwtPayload;
     req.userId = decoded.userId;
     next();
   } catch {
