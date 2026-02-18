@@ -32,6 +32,9 @@ function MyBookings() {
       .then(data => {
         setBookings(data);
       })
+      .catch(() => {
+        // Network or parse error — leave bookings empty, loading will stop via finally
+      })
       .finally(() => {
         setLoading(false);
       });
