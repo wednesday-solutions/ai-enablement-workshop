@@ -60,8 +60,9 @@ Before raising a PR, verify:
 - [ ] No unrelated changes are bundled in
 - [ ] Commit messages are clean and follow the format above
 - [ ] No `console.log`, commented-out code, or `TODO` left behind
-- [ ] **Unit tests written for every change in this PR**
+- [ ] **Unit and integration tests written for every change in this PR**
 - [ ] All tests pass
+- [ ] **CI pipeline is green** (from Phase 2a onwards — CI is set up immediately after the first tests land)
 
 Use AI to review your own PR before asking a human — prompt it with the diff and ask for a code review focused on correctness, security, and code quality.
 
@@ -69,20 +70,20 @@ Use AI to review your own PR before asking a human — prompt it with the diff a
 
 ## Session Map — One Row = One Claude Code Session = One PR
 
-Each session is self-contained. Start a new Claude Code session, tell it to work on the phase below, and it will create the branch, make the commits, and open a PR. Phases must be done in order within each group — fixes before tests, tests before CI.
+Each session is self-contained. Start a new Claude Code session, tell it to work on the phase below, and it will create the branch, make the commits, and open a PR. **Phases must be done in order** — CI lands immediately after the first tests so every subsequent PR is automatically gated.
 
 | Phase | Branch to create | Files touched | PR title |
 |-------|-----------------|---------------|----------|
 | **1** | `chore/tooling-baseline` | `eslint.config.js`, `.prettierrc`, `commitlint.config.js`, `.husky/`, root `package.json` | `chore: add ESLint, SonarJS, Prettier, Commitlint, Husky` |
 | **2a** | `fix/null-crashes` | `MovieDetail.tsx`, `MyBookings.tsx`, `SeatSelection.tsx`, `MovieDetail.test.tsx`, `MyBookings.test.tsx`, `SeatSelection.test.tsx` | `fix: null-check cast/synopsis, fix loading state, fix seat state mutation` |
+| **ci** | `ci/github-actions` | `.github/workflows/ci.yml` (new) | `ci: add GitHub Actions pipeline — lint, test, coverage` |
 | **2b** | `feat/error-boundary` | `src/ErrorBoundary.tsx` (new), `App.tsx`, `ErrorBoundary.test.tsx` (new) | `feat: add ErrorBoundary around route tree` |
 | **2c** | `perf/remove-blocking-search` | `Home.tsx`, `Home.test.tsx` | `perf: remove blocking while loop, add useMemo and useCallback` |
 | **2d** | `fix/auth-security` | `server/src/routes/auth.ts`, `server/src/seed.ts`, `.env.example`, `AuthContext.tsx`, `auth.test.ts`, `auth.integration.test.ts`, `AuthContext.test.tsx` | `fix: hash passwords, move JWT secret to env, add rate limiting, persist token` |
 | **2e** | `feat/memoria-design-system` | All `pages/*.tsx`, `App.tsx`, `index.css`, snapshot tests | `feat: apply Memoria dark design system across all pages` |
 | **2f** | `refactor/code-quality` | `server/src/routes/*.ts`, `server/src/constants.ts` (new), `server/src/seed.ts` | `refactor: typed routes, extract magic strings, add seed guard` |
 | **3a** | `test/e2e` | `e2e/**/*.spec.ts` (new), `playwright.config.ts` (new) | `test: add Playwright E2E tests for full user journeys` |
-| **4** | `ci/github-actions` | `.github/workflows/ci.yml` (new) | `ci: add GitHub Actions pipeline — lint, test, coverage, Sonar` |
-| **5** | `chore/docker` | `packages/server/Dockerfile`, `packages/web/Dockerfile`, `docker-compose.yml` | `chore: add Dockerfiles and docker-compose for server and web` |
+| **4** | `chore/docker` | `packages/server/Dockerfile`, `packages/web/Dockerfile`, `docker-compose.yml` | `chore: add Dockerfiles and docker-compose for server and web` |
 
 ### How to hand off to a new session
 
@@ -100,15 +101,14 @@ The session will have everything it needs from those two docs.
 |-------|------|---------------------|
 | 1 | Tooling — ESLint, SonarJS, Prettier, Commitlint, Husky | 30 min |
 | 2a | Fix null crashes + unit tests | 30 min |
+| ci | CI pipeline — gates all subsequent PRs | 20 min |
 | 2b | Add ErrorBoundary + unit tests | 20 min |
 | 2c | Fix performance + unit tests | 20 min |
-| 2d | Fix security + unit tests | 60 min |
+| 2d | Fix security + unit + integration tests | 60 min |
 | 2e | Apply Memoria design system + snapshot tests | 2 hrs |
 | 2f | Code quality cleanup | 30 min |
-| 3a | Integration tests — full booking flow, in-memory DB | 30 min |
-| 3b | E2E tests — Playwright, full user journeys | 30 min |
-| 4 | CI pipeline | 20 min |
-| 5 | Docker + deployment | 20 min |
+| 3a | E2E tests — Playwright, full user journeys | 30 min |
+| 4 | Docker + deployment | 20 min |
 | **Total** | | **~6.5 hrs** |
 
 ---
@@ -207,6 +207,23 @@ Each fix is a separate commit. Each fix commit is followed by a test commit on t
 | `MyBookings.test.tsx` | Shows empty state (not spinner) when API returns an empty array |
 | `SeatSelection.test.tsx` | Clicking a selected seat removes it from state (no mutation); clicking an unselected seat adds it |
 
+### Phase CI — GitHub Actions Pipeline
+
+> **Must merge before Phase 2b.** Once the first tests exist, CI automates the quality gate so no subsequent PR can merge with failing lint, tests, or coverage regressions.
+
+Create `.github/workflows/ci.yml`. The pipeline runs on every push and PR to `main`:
+
+1. Install dependencies (`pnpm install`)
+2. Lint (`pnpm lint`)
+3. Test with coverage (`pnpm -r test:coverage`)
+4. Fail the build if coverage drops below thresholds
+
+After merging this PR, enable **branch protection** on `main` in GitHub → require the CI check to pass before any PR can merge.
+
+**No tests to write** — this phase is pipeline configuration only.
+
+---
+
 ### 2b — Error Boundary (Priority: High)
 
 Add a React `ErrorBoundary` wrapping the route tree so any future unhandled render error shows a friendly fallback instead of a blank white screen. This is one focused PR: the component itself, then wiring it into `App.tsx`.
@@ -291,23 +308,7 @@ Run real user journeys in a real browser against the full running stack.
 
 ---
 
-## Phase 4 — CI Pipeline
-
-Once tests are in place, automate everything on push and PR. The pipeline should:
-
-1. Install dependencies
-2. Run lint
-3. Run unit + integration tests with coverage
-4. Run Sonar scan (upload coverage report)
-5. Run E2E tests against the full stack
-
-No PR should merge to `main` if the pipeline is red.
-
-**Tools:** GitHub Actions
-
----
-
-## Phase 5 — Docker + Deployment
+## Phase 4 — Docker + Deployment
 
 Containerise both the server and web app for consistent, reproducible deployments.
 
