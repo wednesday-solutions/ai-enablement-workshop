@@ -31,6 +31,8 @@ function MyBookings() {
       .then(res => res.json())
       .then(data => {
         setBookings(data);
+      })
+      .finally(() => {
         setLoading(false);
       });
   }, [user, token]);
