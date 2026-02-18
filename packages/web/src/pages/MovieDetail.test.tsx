@@ -44,35 +44,33 @@ describe('MovieDetail — null field handling', () => {
   it('renders without crashing when cast_members is null', async () => {
     mockFetch({ ...baseMovie, cast_members: null })
     renderMovieDetail()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
-    expect(screen.getByText('Test Movie')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Test Movie')).toBeInTheDocument())
   })
 
   it('renders without crashing when synopsis is null', async () => {
     mockFetch({ ...baseMovie, synopsis: null })
     renderMovieDetail()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
-    expect(screen.getByText(/No synopsis available/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Test Movie')).toBeInTheDocument())
+    expect(screen.queryByText(/synopsis/i)).not.toBeInTheDocument()
   })
 
   it('renders without crashing when rating is null', async () => {
     mockFetch({ ...baseMovie, rating: null })
     renderMovieDetail()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
-    expect(screen.getByText(/N\/A/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Test Movie')).toBeInTheDocument())
+    expect(screen.queryByText(/\/ 10/)).not.toBeInTheDocument()
   })
 
-  it('renders cast members separated by pipe when cast_members is populated', async () => {
+  it('renders cast members separated by middle dot when cast_members is populated', async () => {
     mockFetch(baseMovie)
     renderMovieDetail()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
-    expect(screen.getByText(/Actor One \| Actor Two/)).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Test Movie')).toBeInTheDocument())
+    expect(screen.getByText(/Actor One \u00b7 Actor Two/)).toBeInTheDocument()
   })
 
   it('shows "Movie not found." when API returns null', async () => {
     mockFetch(null as unknown as object)
     renderMovieDetail()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
-    expect(screen.getByText('Movie not found.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByText('Movie not found.')).toBeInTheDocument())
   })
 })

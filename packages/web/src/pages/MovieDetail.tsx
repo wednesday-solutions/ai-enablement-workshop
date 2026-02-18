@@ -50,58 +50,125 @@ function MovieDetail() {
       });
   }, [id]);
 
-  if (loading) return <div>Loading...</div>;
+  if (loading) return (
+    <div className="sp-page" style={{ textAlign: 'center', paddingTop: '80px' }}>
+      <p style={{ fontFamily: "'DM Sans', sans-serif", color: 'var(--text-body)' }}>Loading…</p>
+    </div>
+  );
 
-  if (!movie) return <div>Movie not found.</div>;
+  if (!movie) return (
+    <div className="sp-page" style={{ textAlign: 'center', paddingTop: '80px' }}>
+      <p style={{ fontFamily: "'DM Sans', sans-serif", color: 'var(--text-body)' }}>Movie not found.</p>
+      <Link to="/"><button className="sp-btn-primary" style={{ marginTop: '16px' }}>Back to Home</button></Link>
+    </div>
+  );
 
   const dates = [...new Set(showtimes.map(s => s.date))];
   const filteredShowtimes = showtimes.filter(s => s.date === selectedDate);
 
   return (
-    <div>
-      {/* Ugly layout with no design */}
-      <div style={{ display: 'flex', gap: '20px' }}>
-        <div>
+    <div className="sp-page">
+      {/* Hero section */}
+      <div style={{ display: 'flex', gap: '40px', marginBottom: '48px', flexWrap: 'wrap' }}>
+        {/* Poster */}
+        <div style={{ flexShrink: 0 }}>
           <img
             src={movie.poster_url}
             alt={movie.title}
-            style={{ width: '300px', height: '450px', objectFit: 'cover', border: '2px solid #ccc' }}
+            style={{
+              width: '260px',
+              height: '390px',
+              objectFit: 'cover',
+              borderRadius: 'var(--radius-2xl)',
+              boxShadow: 'var(--shadow-card)',
+              display: 'block',
+            }}
+            onError={(e) => { (e.target as HTMLImageElement).src = 'https://placehold.co/260x390/f5f5f5/a3a3a3?text=No+Image'; }}
           />
         </div>
-        <div style={{ flex: 1 }}>
-          <h1 style={{ margin: '0 0 10px' }}>{movie.title}</h1>
-          <p style={{ color: '#666' }}>
-            {movie.genre} | {movie.duration} min | {movie.language} | ⭐ {movie.rating?.toFixed(1) ?? 'N/A'}
-          </p>
-          <p style={{ marginTop: '10px' }}>
-            <b>Director:</b> {movie.director}
-          </p>
-          <p>
-            <b>Cast:</b> {(movie.cast_members ?? '').split(',').map(n => n.trim()).filter(Boolean).join(' | ')}
-          </p>
-          <p style={{ marginTop: '10px', lineHeight: '1.6' }}>
-            <b>Synopsis:</b> {movie.synopsis || 'No synopsis available'}
-          </p>
+
+        {/* Details */}
+        <div style={{ flex: 1, minWidth: '260px' }}>
+          <p className="sp-label" style={{ marginBottom: '10px' }}>{movie.genre}</p>
+          <h1 style={{
+            fontFamily: "'Instrument Serif', serif",
+            fontSize: '44px',
+            fontWeight: 400,
+            color: 'var(--text-primary)',
+            letterSpacing: '-0.02em',
+            lineHeight: 1.1,
+            margin: '0 0 16px',
+          }}>
+            {movie.title}
+          </h1>
+
+          {/* Meta pills */}
+          <div style={{ display: 'flex', gap: '8px', flexWrap: 'wrap', marginBottom: '20px' }}>
+            <span className="sp-badge">{movie.duration} min</span>
+            <span className="sp-badge">{movie.language}</span>
+            {movie.rating != null && (
+              <span className="sp-badge" style={{ color: 'var(--brand-dark)' }}>
+                {movie.rating.toFixed(1)} / 10
+              </span>
+            )}
+          </div>
+
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
+            <div>
+              <p className="sp-label" style={{ marginBottom: '4px' }}>Director</p>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '15px', color: 'var(--text-secondary)', margin: 0 }}>
+                {movie.director}
+              </p>
+            </div>
+
+            {movie.cast_members && (
+              <div>
+                <p className="sp-label" style={{ marginBottom: '4px' }}>Cast</p>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '14px', color: 'var(--text-body)', margin: 0, lineHeight: 1.5 }}>
+                  {movie.cast_members.split(',').map(n => n.trim()).filter(Boolean).join(' · ')}
+                </p>
+              </div>
+            )}
+
+            {movie.synopsis && (
+              <div>
+                <p className="sp-label" style={{ marginBottom: '4px' }}>Synopsis</p>
+                <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '15px', color: 'var(--text-body)', margin: 0, lineHeight: 1.6 }}>
+                  {movie.synopsis}
+                </p>
+              </div>
+            )}
+          </div>
         </div>
       </div>
 
-      {/* Showtimes section */}
-      <div style={{ marginTop: '30px' }}>
-        <h2>Showtimes</h2>
+      {/* Showtimes */}
+      <div>
+        <p className="sp-label" style={{ marginBottom: '16px' }}>Showtimes</p>
 
-        {/* Date picker - ugly pills */}
-        <div style={{ marginBottom: '15px' }}>
+        {/* Date selector */}
+        <div style={{ display: 'flex', gap: '8px', marginBottom: '20px', flexWrap: 'wrap' }}>
           {dates.map(date => (
             <button
               key={date}
               onClick={() => setSelectedDate(date)}
               style={{
-                background: date === selectedDate ? '#4444ff' : '#ddd',
-                color: date === selectedDate ? 'white' : '#333',
-                margin: '0 4px',
+                fontFamily: "'DM Sans', sans-serif",
+                fontSize: '13px',
+                fontWeight: 500,
                 padding: '8px 16px',
-                border: 'none',
-                cursor: 'pointer'
+                borderRadius: '100px',
+                border: '1.5px solid',
+                cursor: 'pointer',
+                transition: 'all 0.2s ease',
+                background: date === selectedDate
+                  ? 'var(--brand-gradient)'
+                  : 'var(--bg-white)',
+                color: date === selectedDate ? '#fff' : 'var(--text-body)',
+                borderColor: date === selectedDate
+                  ? 'transparent'
+                  : 'var(--border-default)',
+                boxShadow: date === selectedDate ? '0 4px 12px rgba(74,222,128,0.35)' : 'none',
               }}
             >
               {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
@@ -109,21 +176,28 @@ function MovieDetail() {
           ))}
         </div>
 
-        {/* Showtime list */}
-        <div>
+        {/* Showtime cards */}
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '20px' }}>
           {filteredShowtimes.map(st => (
-            <div key={st.id} style={{
-              display: 'inline-block',
-              border: '1px solid #ccc',
-              padding: '12px 20px',
-              margin: '4px',
-              background: 'white'
-            }}>
-              <div style={{ fontWeight: 'bold' }}>{st.time}</div>
-              <div style={{ fontSize: '12px', color: '#666' }}>{st.venue}</div>
-              <div style={{ fontSize: '14px', marginTop: '4px' }}>₹{st.price}</div>
+            <div key={st.id} className="sp-card" style={{ padding: '18px 22px', minWidth: '160px' }}>
+              <div style={{
+                fontFamily: "'Instrument Serif', serif",
+                fontSize: '22px',
+                color: 'var(--text-primary)',
+                marginBottom: '4px',
+              }}>
+                {st.time}
+              </div>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '12px', color: 'var(--text-muted)', margin: '0 0 8px' }}>
+                {st.venue}
+              </p>
+              <p style={{ fontFamily: "'DM Sans', sans-serif", fontSize: '16px', fontWeight: 700, color: 'var(--text-secondary)', margin: '0 0 14px' }}>
+                ₹{st.price}
+              </p>
               <Link to={`/seats/${st.id}`}>
-                <button style={{ marginTop: '8px', fontSize: '12px' }}>Select Seats</button>
+                <button className="sp-btn-primary" style={{ width: '100%', fontSize: '13px', padding: '8px' }}>
+                  Select Seats
+                </button>
               </Link>
             </div>
           ))}
