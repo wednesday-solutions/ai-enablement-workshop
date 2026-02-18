@@ -1,7 +1,7 @@
 import { render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { MemoryRouter } from 'react-router-dom'
-import { describe, it, expect, vi, beforeEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
 import Home from './Home'
 
 const mockMovies = [
@@ -20,14 +20,21 @@ function renderHome() {
   )
 }
 
+let consoleErrorSpy: ReturnType<typeof vi.spyOn>
+
 beforeEach(() => {
   vi.restoreAllMocks()
+  consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
   global.fetch = vi.fn().mockImplementation((url: string) => {
     if (url.includes('/meta/genres')) {
       return Promise.resolve({ json: () => Promise.resolve(mockGenres) })
     }
     return Promise.resolve({ json: () => Promise.resolve(mockMovies) })
   })
+})
+
+afterEach(() => {
+  consoleErrorSpy.mockRestore()
 })
 
 describe('Home — search and genre filter', () => {
@@ -79,5 +86,31 @@ describe('Home — search and genre filter', () => {
     expect(screen.queryByText('Inception')).not.toBeInTheDocument()
     expect(screen.queryByText('The Dark Knight')).not.toBeInTheDocument()
     expect(screen.getByText('1 movies found')).toBeInTheDocument()
+  })
+
+  it('logs console.error when movies fetch fails', async () => {
+    const fetchError = new Error('Network error')
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/meta/genres')) {
+        return Promise.resolve({ json: () => Promise.resolve(mockGenres) })
+      }
+      return Promise.reject(fetchError)
+    })
+
+    renderHome()
+    await waitFor(() => expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to fetch movies:', fetchError))
+  })
+
+  it('logs console.error when genres fetch fails', async () => {
+    const fetchError = new Error('Network error')
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/meta/genres')) {
+        return Promise.reject(fetchError)
+      }
+      return Promise.resolve({ json: () => Promise.resolve(mockMovies) })
+    })
+
+    renderHome()
+    await waitFor(() => expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to fetch genres:', fetchError))
   })
 })
