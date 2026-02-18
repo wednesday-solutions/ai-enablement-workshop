@@ -27,9 +27,9 @@ beforeEach(() => {
   consoleErrorSpy = vi.spyOn(console, 'error').mockImplementation(() => {})
   global.fetch = vi.fn().mockImplementation((url: string) => {
     if (url.includes('/meta/genres')) {
-      return Promise.resolve({ json: () => Promise.resolve(mockGenres) })
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(mockGenres) })
     }
-    return Promise.resolve({ json: () => Promise.resolve(mockMovies) })
+    return Promise.resolve({ ok: true, json: () => Promise.resolve(mockMovies) })
   })
 })
 
@@ -92,7 +92,7 @@ describe('Home — search and genre filter', () => {
     const fetchError = new Error('Network error')
     global.fetch = vi.fn().mockImplementation((url: string) => {
       if (url.includes('/meta/genres')) {
-        return Promise.resolve({ json: () => Promise.resolve(mockGenres) })
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockGenres) })
       }
       return Promise.reject(fetchError)
     })
@@ -107,10 +107,55 @@ describe('Home — search and genre filter', () => {
       if (url.includes('/meta/genres')) {
         return Promise.reject(fetchError)
       }
-      return Promise.resolve({ json: () => Promise.resolve(mockMovies) })
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(mockMovies) })
     })
 
     renderHome()
     await waitFor(() => expect(consoleErrorSpy).toHaveBeenCalledWith('Failed to fetch genres:', fetchError))
+  })
+
+  it('does not log console.error when fetch is aborted (component unmount)', async () => {
+    const abortError = Object.assign(new Error('Aborted'), { name: 'AbortError' })
+    global.fetch = vi.fn().mockRejectedValue(abortError)
+
+    renderHome()
+    // Wait for promises to settle
+    await new Promise(r => setTimeout(r, 0))
+
+    expect(consoleErrorSpy).not.toHaveBeenCalled()
+  })
+
+  it('logs console.error when movies fetch returns a non-OK HTTP status', async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/meta/genres')) {
+        return Promise.resolve({ ok: true, json: () => Promise.resolve(mockGenres) })
+      }
+      return Promise.resolve({ ok: false, status: 500 })
+    })
+
+    renderHome()
+    await waitFor(() =>
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to fetch movies:',
+        expect.objectContaining({ message: 'HTTP error! status: 500' })
+      )
+    )
+  })
+
+  it('logs console.error when genres fetch returns a non-OK HTTP status', async () => {
+    global.fetch = vi.fn().mockImplementation((url: string) => {
+      if (url.includes('/meta/genres')) {
+        return Promise.resolve({ ok: false, status: 404 })
+      }
+      return Promise.resolve({ ok: true, json: () => Promise.resolve(mockMovies) })
+    })
+
+    renderHome()
+    await waitFor(() =>
+      expect(consoleErrorSpy).toHaveBeenCalledWith(
+        'Failed to fetch genres:',
+        expect.objectContaining({ message: 'HTTP error! status: 404' })
+      )
+    )
   })
 })

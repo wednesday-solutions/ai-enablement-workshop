@@ -20,23 +20,38 @@ function Home() {
   const [genres, setGenres] = useState<string[]>([]);
 
   useEffect(() => {
-    fetch('/api/movies')
-      .then(res => res.json())
+    const controller = new AbortController();
+    const { signal } = controller;
+
+    fetch('/api/movies', { signal })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then((data: Movie[]) => {
         setMovies(data);
         setLoading(false);
       })
       .catch((err: unknown) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Failed to fetch movies:', err);
         setLoading(false);
       });
 
-    fetch('/api/movies/meta/genres')
-      .then(res => res.json())
+    fetch('/api/movies/meta/genres', { signal })
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then((data: string[]) => setGenres(data))
       .catch((err: unknown) => {
+        if (err instanceof Error && err.name === 'AbortError') return;
         console.error('Failed to fetch genres:', err);
       });
+
+    return () => {
+      controller.abort();
+    };
   }, []);
 
   const filteredMovies = useMemo(() => {
