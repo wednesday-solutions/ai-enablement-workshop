@@ -71,7 +71,7 @@ function MovieDetail() {
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: '0 0 10px' }}>{movie!.title}</h1>
           <p style={{ color: '#666' }}>
-            {movie!.genre} | {movie!.duration} min | {movie!.language} | ⭐ {movie!.rating.toFixed(1)}
+            {movie!.genre} | {movie!.duration} min | {movie!.language} | ⭐ {movie!.rating?.toFixed(1) ?? 'N/A'}
           </p>
           <p style={{ marginTop: '10px' }}>
             <b>Director:</b> {movie!.director}
@@ -80,8 +80,7 @@ function MovieDetail() {
             <b>Cast:</b> {(movie!.cast_members ?? '').split(',').join(' | ')}
           </p>
           <p style={{ marginTop: '10px', lineHeight: '1.6' }}>
-            {/* BUG: Accessing .length on potentially null synopsis */}
-            <b>Synopsis:</b> {movie!.synopsis.length > 0 ? movie!.synopsis : 'No synopsis available'}
+            <b>Synopsis:</b> {movie!.synopsis ?? 'No synopsis available'}
           </p>
         </div>
       </div>
