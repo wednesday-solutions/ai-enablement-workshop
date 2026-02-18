@@ -1,12 +1,17 @@
 {
   "name": "stagepass",
   "private": true,
+  "type": "module",
   "scripts": {
     "dev": "pnpm --parallel -r run dev",
     "dev:server": "pnpm --filter @stagepass/server run dev",
     "dev:web": "pnpm --filter @stagepass/web run dev",
     "build": "pnpm -r run build",
-    "seed": "pnpm --filter @stagepass/server run seed"
+    "seed": "pnpm --filter @stagepass/server run seed",
+    "lint": "eslint packages/*/src",
+    "format": "prettier --write packages/*/src",
+    "format:check": "prettier --check packages/*/src",
+    "prepare": "husky"
   },
   "engines": {
     "node": ">=18"
@@ -16,5 +21,16 @@
       "better-sqlite3",
       "esbuild"
     ]
+  },
+  "devDependencies": {
+    "@commitlint/cli": "^20.4.1",
+    "@commitlint/config-conventional": "^20.4.1",
+    "@eslint/js": "^9.39.2",
+    "eslint": "^9.39.2",
+    "eslint-plugin-sonarjs": "^3.0.7",
+    "globals": "^17.3.0",
+    "husky": "^9.1.7",
+    "prettier": "^3.8.1",
+    "typescript-eslint": "^8.56.0"
   }
 }
