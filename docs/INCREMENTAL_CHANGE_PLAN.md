@@ -1,781 +1,286 @@
 # Incremental Change Plan — StagePass
 
-Every change lives on its own branch, gets reviewed as a PR, and is merged to `main` only after approval. Commits within a branch are atomic — one logical change per commit.
+A guide to improving the StagePass codebase with AI assistance, phase by phase.
 
 **Estimated total time with AI: ~6 hours**
 **Without AI: 2–3 days**
 
 ---
 
-## Git Workflow Rules
+## Ground Rules
+
+These rules apply to every single change made in this codebase, no exceptions.
+
+### Branching
+Every change — no matter how small — lives on its own branch. Never commit directly to `main`. Branch names should reflect the type and scope of the change:
 
 ```
-main                        ← protected, never commit directly
- └── chore/tooling-setup    ← branch per concern
-      ├── commit 1 (atomic)
-      ├── commit 2 (atomic)
-      └── PR → reviewed → merged to main
+fix/       — bug fixes
+perf/      — performance improvements
+feat/      — new features
+refactor/  — code quality, no behaviour changes
+test/      — adding or updating tests
+chore/     — tooling, config, infrastructure
+ci/        — CI/CD pipeline changes
 ```
 
-**Branch naming:**
-- `fix/`       — bug fixes
-- `perf/`      — performance improvements
-- `feat/`      — new features
-- `refactor/`  — code quality, no behaviour change
-- `test/`      — adding tests
-- `chore/`     — tooling, config, infrastructure
-- `ci/`        — CI/CD pipeline
+### Commits
+Each commit should do exactly one thing. If you find yourself writing "and" in a commit message, that's two commits. Ask yourself before committing: *if I needed to revert just this change, could I?*
 
-**PR review checklist (apply to every PR):**
-- [ ] Does the change do exactly what the branch name says and nothing more?
-- [ ] Are there no unrelated changes bundled in?
-- [ ] Do all existing tests still pass?
-- [ ] Does the commit message follow the format below?
-- [ ] Is there no commented-out code, no `console.log`, no `TODO` left behind?
-
-**Commit message format:**
+Commit message format (enforced by commitlint — set up in Phase 1):
 ```
 <type>(<scope>): <short summary>
 
 <optional body — what and why, not how>
 ```
 
+Examples of good atomic commits:
+```
+fix(MovieDetail): null-check cast_members before calling .split()
+fix(auth): move JWT_SECRET from hardcoded string to process.env
+perf(Home): remove blocking while loop from search filter
+refactor(server): replace req: any with typed Express interfaces
+```
+
+### Pull Requests
+Every branch gets a PR before it touches `main`. PRs should be small and focused — a reviewer should be able to understand the entire change in under 5 minutes.
+
+Before raising a PR, verify:
+- [ ] The branch does exactly one thing and nothing more
+- [ ] No unrelated changes are bundled in
+- [ ] Commit messages are clean and follow the format above
+- [ ] No `console.log`, commented-out code, or `TODO` left behind
+- [ ] Existing tests still pass
+
+Use AI to review your own PR before asking a human — prompt it with the diff and ask for a code review focused on correctness, security, and code quality.
+
+---
+
+## Session Map — One Row = One Claude Code Session = One PR
+
+Each session is self-contained. Start a new Claude Code session, tell it to work on the phase below, and it will create the branch, make the commits, and open a PR. Phases must be done in order within each group — fixes before tests, tests before CI.
+
+| Phase | Branch to create | Files touched | PR title |
+|-------|-----------------|---------------|----------|
+| **1** | `chore/tooling-baseline` | `eslint.config.js`, `.prettierrc`, `commitlint.config.js`, `.husky/`, root `package.json` | `chore: add ESLint, SonarJS, Prettier, Commitlint, Husky` |
+| **2a** | `fix/null-crashes` | `MovieDetail.tsx`, `MyBookings.tsx`, `SeatSelection.tsx` | `fix: null-check cast/synopsis, fix loading state, fix seat state mutation` |
+| **2b** | `feat/error-boundary` | `src/ErrorBoundary.tsx` (new), `App.tsx` | `feat: add ErrorBoundary around route tree` |
+| **2c** | `perf/remove-blocking-search` | `Home.tsx` | `perf: remove blocking while loop, add useMemo and useCallback` |
+| **2d** | `fix/auth-security` | `server/src/routes/auth.ts`, `server/src/seed.ts`, `.env.example`, `AuthContext.tsx` | `fix: hash passwords, move JWT secret to env, add rate limiting, persist token` |
+| **2e** | `feat/memoria-design-system` | All `pages/*.tsx`, `App.tsx`, `index.css` | `feat: apply Memoria dark design system across all pages` |
+| **2f** | `refactor/code-quality` | `server/src/routes/*.ts`, `server/src/constants.ts` (new), `server/src/seed.ts` | `refactor: typed routes, extract magic strings, add seed guard` |
+| **3a** | `test/unit` | `**/*.test.tsx`, `**/*.test.ts` | `test: add unit tests for all components and server handlers` |
+| **3b** | `test/integration` | `server/src/**/*.integration.test.ts` | `test: add integration tests — full booking flow against in-memory DB` |
+| **3c** | `test/e2e` | `e2e/**/*.spec.ts` (new), `playwright.config.ts` (new) | `test: add Playwright E2E tests for full user journeys` |
+| **4** | `ci/github-actions` | `.github/workflows/ci.yml` (new) | `ci: add GitHub Actions pipeline — lint, test, coverage, Sonar` |
+| **5** | `chore/docker` | `packages/server/Dockerfile`, `packages/web/Dockerfile`, `docker-compose.yml` | `chore: add Dockerfiles and docker-compose for server and web` |
+
+### How to hand off to a new session
+
+Start a new Claude Code session in this repo and say:
+
+> "Read `docs/INCREMENTAL_CHANGE_PLAN.md` and `docs/ISSUES_IN_THE_CODEBASE.md`, then work on phase **[X]**. Create the branch listed in the session map, make atomic commits following the ground rules, then open a PR."
+
+The session will have everything it needs from those two docs.
+
 ---
 
 ## Time Estimate Breakdown
 
-| Branch | Est. Time (with AI) |
-|--------|---------------------|
-| `chore/tooling-setup` | 30 min |
-| `fix/null-crashes` | 20 min |
-| `fix/error-boundary` | 15 min |
-| `perf/search` | 15 min |
-| `fix/auth-security` | 45 min |
-| `feat/memoria-ui` | 2 hrs |
-| `refactor/code-quality` | 30 min |
-| `test/unit` | 45 min |
-| `test/integration` | 30 min |
-| `test/e2e` | 30 min |
-| `ci/github-actions` | 20 min |
-| `chore/docker` | 20 min |
-| **Total** | **~6 hrs** |
+| Phase | What | Est. Time (with AI) |
+|-------|------|---------------------|
+| 1 | Tooling — ESLint, SonarJS, Prettier, Commitlint, Husky | 30 min |
+| 2a | Fix null crashes and state mutation bugs | 20 min |
+| 2b | Add ErrorBoundary | 15 min |
+| 2c | Fix performance — blocking search | 15 min |
+| 2d | Fix security — auth hardening | 45 min |
+| 2e | Apply Memoria design system | 2 hrs |
+| 2f | Code quality cleanup | 30 min |
+| 3a | Unit tests | 45 min |
+| 3b | Integration tests | 30 min |
+| 3c | E2E tests | 30 min |
+| 4 | CI pipeline | 20 min |
+| 5 | Docker + deployment | 20 min |
+| **Total** | | **~6 hrs** |
 
 ---
 
-## Branch 1 — `chore/tooling-setup`
+## Phase 1 — Tooling Baseline
 
-> Goal: establish a quality baseline before touching any product code.
+Establish a quality baseline before touching any product code. Nothing ships without this in place.
 
-### Commits
-
-**Commit 1**
-```
-chore(lint): add ESLint with TypeScript support
-
-- eslint.config.js at root
-- @eslint/js + typescript-eslint
-- Warns on @typescript-eslint/no-explicit-any and no-non-null-assertion
-```
-
-**Commit 2**
-```
-chore(lint): add eslint-plugin-sonarjs
-
-Catches cognitive complexity violations, duplicated strings,
-no-identical-expressions, no-ignored-return — equivalent to
-running a local Sonar scan without needing a server.
-```
-
-**Commit 3**
-```
-chore(format): add Prettier config
-
-.prettierrc — singleQuote, semi, tabWidth 2, trailingComma es5
-```
-
-**Commit 4**
-```
-chore(scripts): add lint, lint:fix, format scripts to root package.json
-
-Also runs pnpm lint and saves output to docs/lint-baseline.txt
-for before/after comparison in the workshop.
-```
+### What to set up
+- **ESLint** with TypeScript support (`@eslint/js`, `typescript-eslint`)
+- **eslint-plugin-sonarjs** — catches cognitive complexity violations, duplicated code blocks, and code smells without needing a Sonar server
+- **Prettier** — consistent formatting across the codebase
+- **Commitlint** — enforces the commit message format on every `git commit`
+- **Husky** — runs lint, format check, and commitlint as pre-commit and commit-msg git hooks
+- Lint and format scripts in root `package.json`
 
 ### Running Sonar locally
 
-**Option A — eslint-plugin-sonarjs (no server, zero setup)**
+**Option A — eslint-plugin-sonarjs (zero setup, recommended)**
 ```bash
 pnpm lint
-# Flags cognitive complexity, code smells, duplicated blocks
+# Surfaces cognitive complexity, no-identical-expressions,
+# no-ignored-return, duplicated blocks — same rules as SonarQube
 ```
 
-**Option B — SonarQube via Docker (full UI at localhost:9000)**
+**Option B — Full SonarQube via Docker (gives the visual dashboard)**
 ```bash
 docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
-# Wait ~60s, then:
+# Wait ~60s, then scan:
 npx sonar-scanner \
   -Dsonar.projectKey=stagepass \
   -Dsonar.sources=packages/web/src,packages/server/src \
   -Dsonar.host.url=http://localhost:9000 \
   -Dsonar.login=admin \
   -Dsonar.password=admin
+# View results at http://localhost:9000
 ```
 
-### PR title
-`chore: add ESLint, SonarJS, and Prettier — establish quality baseline`
+Run the linter immediately after setup and save the output to `docs/lint-baseline.txt`. This is your before state — you'll compare it against the output after fixes.
 
-### Tests added
-None. Tooling only.
+### Commitlint + Husky
 
----
+Set up commit message linting and pre-commit hooks so the quality guardrails are automatic — no relying on developers to remember.
 
-## Branch 2 — `fix/null-crashes`
-
-> Goal: fix all three null-related crashes. One commit per crash.
-
-### Commits
-
-**Commit 1**
-```
-fix(MovieDetail): null-check cast_members before calling .split()
-
-cast_members is null for "Untitled Project X". Calling .split()
-on null throws a TypeError that white-screens the entire app.
-Render "Cast information unavailable" when null.
-```
-- File: `packages/web/src/pages/MovieDetail.tsx`
-- Change: `movie.cast_members?.split(',').join(' | ') ?? 'Cast information unavailable'`
-
-**Commit 2**
-```
-fix(MovieDetail): null-check synopsis before accessing .length
-
-synopsis is null for unreleased movies. Accessing .length on null
-throws. Use optional chaining and a fallback string instead.
-```
-- File: `packages/web/src/pages/MovieDetail.tsx`
-- Change: `movie.synopsis ?? 'No synopsis available.'`
-
-**Commit 3**
-```
-fix(MyBookings): set loading false regardless of bookings array length
-
-setLoading(false) was inside if (data.length > 0), so a user with
-no bookings would see an infinite spinner. Moved outside the guard.
-```
-- File: `packages/web/src/pages/MyBookings.tsx`
-- Change: Move `setLoading(false)` after `setBookings(data)`, unconditionally.
-
-**Commit 4**
-```
-fix(SeatSelection): replace state mutation with immutable array operations
-
-selectedSeats.splice() and .push() mutate the array in place.
-React uses reference equality — the same array reference means no
-re-render, so seats visually stay selected after deselect.
-Replace with filter() and spread to always produce a new array.
-```
-- File: `packages/web/src/pages/SeatSelection.tsx`
-- Change:
-  ```ts
-  // Remove:
-  selectedSeats.splice(index, 1);
-  setSelectedSeats(selectedSeats);
-
-  // Add:
-  setSelectedSeats(prev => prev.filter(id => id !== seatId));
-  // and for adding:
-  setSelectedSeats(prev => [...prev, seatId]);
-  ```
-
-### PR title
-`fix: resolve null crashes and seat selection state mutation`
-
-### Tests added (unit — Vitest + React Testing Library)
-```
-packages/web/src/pages/__tests__/
-  MovieDetail.test.tsx
-    ✓ renders "Cast information unavailable" when cast_members is null
-    ✓ renders "No synopsis available" when synopsis is null
-    ✓ does not throw when movie has all null optional fields
-
-  MyBookings.test.tsx
-    ✓ shows empty state text when API returns empty array
-    ✓ loading spinner is not visible after empty response
-
-  SeatSelection.test.tsx
-    ✓ selecting a seat adds it to selectedSeats
-    ✓ selecting the same seat again removes it
-    ✓ state array is a new reference after each toggle (no mutation)
-```
-
----
-
-## Branch 3 — `fix/error-boundary`
-
-> Goal: prevent any future unhandled render errors from white-screening the app.
-
-### Commits
-
-**Commit 1**
-```
-feat(ErrorBoundary): add ErrorBoundary component
-
-Class component that catches render errors in the tree below it
-and shows a user-friendly fallback with a "Reload page" button.
-```
-- File: `packages/web/src/components/ErrorBoundary.tsx` (new)
-
-**Commit 2**
-```
-fix(App): wrap route tree with ErrorBoundary
-
-Any page crash now shows the fallback UI instead of a blank screen.
-```
-- File: `packages/web/src/App.tsx`
-
-### PR title
-`fix: add ErrorBoundary to prevent full app crashes`
-
-### Tests added (unit)
-```
-packages/web/src/components/__tests__/
-  ErrorBoundary.test.tsx
-    ✓ renders children normally when no error occurs
-    ✓ renders fallback UI when a child component throws
-    ✓ fallback contains a reload button
-```
-
----
-
-## Branch 4 — `perf/search`
-
-> Goal: eliminate the 2-second UI freeze on search.
-
-### Commits
-
-**Commit 1**
-```
-perf(Home): remove blocking while loop from search filter
-
-The while(Date.now() - start < 2000) loop blocked the main thread
-for 2 seconds on every keystroke. Removed entirely — the actual
-.filter() operation is instant.
-```
-- File: `packages/web/src/pages/Home.tsx`
-
-**Commit 2**
-```
-perf(Home): memoize filtered movies, debounce search input
-
-- useMemo on filteredMovies — recomputes only when movies/search/genre change
-- useCallback on handlers — stable references across renders
-- 300ms debounce on search input to avoid filtering on every keystroke
-```
-- File: `packages/web/src/pages/Home.tsx`
-
-### PR title
-`perf: fix blocking search and add memoisation to Home page`
-
-### Tests added (unit)
-```
-packages/web/src/pages/__tests__/
-  Home.test.tsx
-    ✓ search input does not block the UI (completes in < 50ms)
-    ✓ filters movies by title substring match
-    ✓ filters movies by genre
-    ✓ returns all movies when search and genre are empty
-    ✓ combining search and genre returns correct intersection
-```
-
----
-
-## Branch 5 — `fix/auth-security`
-
-> Goal: harden authentication. One concern per commit.
-
-### Commits
-
-**Commit 1**
-```
-chore(server): add dotenv support and .env.example
-
-All environment variables now read from .env. .env added to
-.gitignore. .env.example documents required vars with safe defaults.
-```
-- New file: `.env.example`
-- Update: `packages/server/src/index.ts` — load dotenv at startup
-
-**Commit 2**
-```
-fix(auth): move JWT secret to environment variable
-
-Hardcoded 'stagepass-secret-key-not-secure' replaced with
-process.env.JWT_SECRET. Server throws on startup if not set.
-```
-- File: `packages/server/src/routes/auth.ts`
-
-**Commit 3**
-```
-fix(auth): hash passwords with bcrypt on signup and compare on login
-
-Passwords were stored and queried as plain text. Now:
-- signup: bcrypt.hash(password, 10) before INSERT
-- login: fetch user by email only, then bcrypt.compare()
-```
-- File: `packages/server/src/routes/auth.ts`
-
-**Commit 4**
-```
-fix(auth): add rate limiting on auth endpoints
-
-express-rate-limit: max 10 requests per 15 minutes on /api/auth/*.
-Returns 429 with a descriptive message when limit is exceeded.
-```
-- File: `packages/server/src/index.ts`
-
-**Commit 5**
-```
-fix(server): add zod validation on all request bodies
-
-Malformed or missing fields now return 400 with a descriptive
-validation error instead of crashing or producing undefined behaviour.
-Schemas added for: login, signup, create booking.
-```
-- Files: `packages/server/src/routes/auth.ts`, `bookings.ts`
-
-**Commit 6**
-```
-fix(AuthContext): persist token to localStorage, rehydrate on mount
-
-Token and user were stored only in React state — a page refresh
-logged the user out. Now persisted to localStorage and rehydrated
-when the app mounts.
-```
-- File: `packages/web/src/AuthContext.tsx`
-
-### PR title
-`fix: harden auth — bcrypt passwords, env secrets, rate limiting, input validation`
-
-### Tests added (unit + integration)
-```
-packages/server/src/routes/__tests__/
-  auth.test.ts
-    ✓ POST /login returns 200 + JWT with correct credentials
-    ✓ POST /login returns 401 with wrong password
-    ✓ POST /login returns 400 when email is missing (zod)
-    ✓ POST /login returns 400 when password is missing (zod)
-    ✓ POST /signup stores a bcrypt hash, not the plain text password
-    ✓ POST /signup returns 400 on duplicate email
-    ✓ POST /login returns 429 after 10 requests in 15 minutes
-
-packages/web/src/__tests__/
-  AuthContext.test.tsx
-    ✓ token is written to localStorage after login
-    ✓ user is restored from localStorage on mount
-    ✓ localStorage is cleared on logout
-```
-
----
-
-## Branch 6 — `feat/memoria-ui`
-
-> Goal: apply the Memoria dark design system. One commit per page.
-
-Install first:
+**Install:**
 ```bash
-pnpm --filter @stagepass/web add framer-motion
+pnpm add -Dw @commitlint/cli @commitlint/config-conventional husky
+pnpm exec husky init
 ```
 
-### Commits
-
-**Commit 1**
-```
-feat(ui): apply Memoria global theme — dark base, remove legacy CSS
-
-- bg-neutral-950 as app background in index.css
-- Remove all hand-written CSS classes from index.css
-- Update tailwind.config.js with neutral colour extension
+**`commitlint.config.js` at root:**
+```js
+export default { extends: ['@commitlint/config-conventional'] }
 ```
 
-**Commit 2**
-```
-feat(ui): extract Header into its own component with Memoria styling
-
-- New file: packages/web/src/components/Header.tsx
-- bg-neutral-950 border-b border-neutral-800
-- Active route highlight, logout button as ghost variant
+**`.husky/pre-commit`** — runs on every `git commit`:
+```sh
+pnpm lint
+pnpm format --check
 ```
 
-**Commit 3**
-```
-feat(ui): apply Memoria design to Home page
-
-- Dark movie card grid: bg-neutral-900/60, border-neutral-800, rounded-xl
-- Rating as hero number: text-3xl font-light text-white
-- Staggered card entry animation via framer-motion
-- Search: bg-neutral-900/80 border-neutral-800 focus:border-neutral-600
-- Genre pills: bg-neutral-800 rounded-full uppercase tracking-widest
+**`.husky/commit-msg`** — validates the commit message format:
+```sh
+pnpm exec commitlint --edit $1
 ```
 
-**Commit 4**
-```
-feat(ui): apply Memoria design to MovieDetail page
+With this in place, a commit with a message like `"fixed stuff"` will be rejected automatically. The only way to commit is with a properly formatted message like `fix(auth): move JWT_SECRET to .env`. This makes the commit discipline from the Ground Rules above enforceable rather than voluntary.
 
-- Blur-in page transition on mount
-- Poster with subtle 3D glare on hover
-- Showtime pills: bg-neutral-800 hover:border-neutral-600
-- Price as hero number per showtime
-- Date selector as pill row with active state
-```
-
-**Commit 5**
-```
-feat(ui): apply Memoria design to SeatSelection page
-
-- Full dark background
-- Available: bg-neutral-700, Selected: bg-white text-black
-- Booked: bg-neutral-800 opacity-40 cursor-not-allowed
-- Thin centered SCREEN indicator
-- Total amount as hero number in booking summary
-```
-
-**Commit 6**
-```
-feat(ui): apply Memoria design to MyBookings page
-
-- Dark booking cards: bg-neutral-900/60 border-neutral-800 rounded-xl
-- Total amount as hero number: text-3xl font-light text-white
-- Movie title, venue, date as text hierarchy (white → neutral-400)
-- Empty state: muted icon, title, description centered
-```
-
-**Commit 7**
-```
-feat(ui): apply Memoria design to BookingConfirmation page
-
-- Spring-based modal entry animation (scale + rotateX)
-- Booking ID as hero number
-- Subtle border-beam effect on confirmation card
-```
-
-### PR title
-`feat: apply Memoria dark design system across all pages`
-
-### Tests added (snapshot)
-```
-packages/web/src/pages/__tests__/
-  Home.test.tsx
-    ✓ snapshot: movie card contains correct Tailwind dark classes
-  MyBookings.test.tsx
-    ✓ snapshot: booking amount renders as hero number
-  MovieDetail.test.tsx
-    ✓ snapshot: showtime pill renders with dark styling
-```
+### Tests
+None. This phase is tooling only.
 
 ---
 
-## Branch 7 — `refactor/code-quality`
+## Phase 2 — Fixes
 
-> Goal: improve type safety and remove magic values. No behaviour changes.
+Work through issues in priority order. See `docs/ISSUES_IN_THE_CODEBASE.md` for full details on each issue.
 
-### Commits
+### 2a — Null Crashes & State Bugs (Priority: Critical)
 
-**Commit 1**
-```
-refactor(server): replace req: any with typed Express interfaces
+These are the visible crashes. Fix them first.
 
-All route handlers now use typed Request/Response. Custom
-AuthenticatedRequest interface extends Request with userId: number.
-```
-- Files: `packages/server/src/routes/*.ts`
+| Issue | File | What to fix |
+|-------|------|-------------|
+| `cast_members.split()` on null | `MovieDetail.tsx` | Optional chain + fallback string |
+| `synopsis.length` on null | `MovieDetail.tsx` | Optional chain + fallback string |
+| `setLoading(false)` inside `if (data.length > 0)` | `MyBookings.tsx` | Move outside the guard |
+| `selectedSeats.splice()` mutates state directly | `SeatSelection.tsx` | Replace with `filter()` and spread |
 
-**Commit 2**
-```
-refactor(server): extract magic strings and numbers to constants.ts
+Each fix is a separate commit on a dedicated branch.
 
-Venue names, seat rows, seats per row, and price tiers are now
-imported from a single constants file instead of scattered inline.
-```
-- New file: `packages/server/src/constants.ts`
+### 2b — Error Boundary (Priority: High)
 
-**Commit 3**
-```
-refactor(seed): add production environment guard
+Add a React `ErrorBoundary` wrapping the route tree so any future unhandled render error shows a friendly fallback instead of a blank white screen. This is one focused PR: the component itself, then wiring it into `App.tsx`.
 
-Running the seed script against a production database would wipe
-all data. Now throws with a clear error if NODE_ENV=production.
-```
-- File: `packages/server/src/seed.ts`
+### 2c — Performance (Priority: High)
 
-### PR title
-`refactor: improve type safety, extract constants, guard seed script`
+The blocking `while (Date.now() - start < 2000)` loop in `Home.tsx` freezes the entire browser tab on every keystroke. Remove it. Then add `useMemo` on the filtered movies computation and `useCallback` on event handlers to prevent unnecessary re-renders.
 
-### Tests added
-None — refactor only. All existing tests must still pass.
+### 2d — Security (Priority: High)
 
----
+Work through these one at a time — each is its own commit:
 
-## Branch 8 — `test/unit`
+1. Add `dotenv` support and `.env.example` — all secrets out of source code
+2. Move `JWT_SECRET` to `process.env`
+3. Hash passwords with `bcrypt` on signup, use `bcrypt.compare` on login
+4. Add `express-rate-limit` on `/api/auth/*`
+5. Add `zod` validation on all request bodies
+6. Persist auth token to `localStorage`, rehydrate on mount
 
-> Goal: unit test coverage for all critical components and route handlers.
-> Dependencies: all fix/* and refactor/* branches must be merged first.
+### 2e — Memoria Design System (Priority: Medium)
 
-### Commits
+Apply the [Memoria design system](https://gist.github.com/alichherawalla/8234538a50f9d089e0159c3e3634e17c) across the frontend. The core principles: dark monochromatic palette (`bg-neutral-950` base), numbers as heroes (`font-light text-white`), staggered animations via `framer-motion`, no accent colours, no inline styles.
 
-**Commit 1**
-```
-test(web): add unit tests for all page components
+Tackle one page per commit:
+1. Global theme + remove legacy CSS
+2. Header (extract to its own component)
+3. Home page — dark card grid, staggered entry, hero rating
+4. Movie Detail — blur-in transition, dark showtime pills
+5. Seat Selection — dark grid, white selected state
+6. My Bookings — hero amount, dark cards
+7. Booking Confirmation — spring modal entry animation
 
-Coverage: Home filter logic, MovieDetail null handling,
-SeatSelection state immutability, MyBookings empty/loading states,
-Login form validation, ErrorBoundary fallback rendering.
-```
+### 2f — Code Quality (Priority: Low)
 
-**Commit 2**
-```
-test(server): add unit tests for all route handlers
-
-Coverage: movies filter/search/404, auth login/signup/errors,
-bookings auth guard and seat marking logic.
-```
-
-**Commit 3**
-```
-test(web): add unit tests for AuthContext
-
-Coverage: login, signup, logout, localStorage persistence,
-rehydration on mount.
-```
-
-### PR title
-`test: add unit tests for web components and server route handlers`
-
-### Tests added (unit — Vitest + RTL + Supertest)
-```
-packages/web/src/pages/__tests__/
-  Home.test.tsx           — filter logic, search, genre
-  MovieDetail.test.tsx    — null fields, showtime grouping
-  SeatSelection.test.tsx  — toggle immutability, price calculation
-  MyBookings.test.tsx     — empty state, loading state, list render
-  Login.test.tsx          — form validation, error display
-
-packages/web/src/__tests__/
-  AuthContext.test.tsx    — login, signup, logout, localStorage
-
-packages/server/src/routes/__tests__/
-  movies.test.ts          — genre filter, search, 404
-  auth.test.ts            — login/signup happy + error paths, rate limit
-  bookings.test.ts        — auth guard, seat booking, amount
-```
+These are refactors with no behaviour change. Each is its own commit:
+- Replace `req: any` and `params: any[]` with proper TypeScript types throughout server routes
+- Extract magic strings (venue names, seat rows, prices) to a `constants.ts` file
+- Add a production environment guard to `seed.ts` so it can't be run against a live database
 
 ---
 
-## Branch 9 — `test/integration`
+## Phase 3 — Tests
 
-> Goal: test full request/response cycles against a real in-memory SQLite DB.
-> Dependencies: `test/unit` merged.
+Add tests after fixes are merged so tests reflect correct behaviour, not bugs. Each test type is its own branch and PR.
 
-### Commits
+### 3a — Unit Tests
 
-**Commit 1**
-```
-test(server): add integration tests for the full booking flow
+Test a single component or function in isolation. All external dependencies (API calls, DB) are mocked.
 
-Tests the complete chain: signup → login → browse movies →
-get showtimes → get seats → POST booking → verify seats booked in DB.
-Uses a separate in-memory SQLite DB — does not touch stagepass.db.
-```
+**What to cover:**
 
-**Commit 2**
-```
-test(server): add integration tests for the auth flow
+| File | Key assertions |
+|------|---------------|
+| `Home.tsx` | Filter by genre, search, combined filter, no blocking |
+| `MovieDetail.tsx` | Renders gracefully with null cast/synopsis fields |
+| `SeatSelection.tsx` | Toggle adds/removes seat without mutating state |
+| `MyBookings.tsx` | Shows empty state (not spinner) for empty response |
+| `Login.tsx` | Form validation, error display on failed login |
+| `AuthContext.tsx` | Login/logout/rehydration with localStorage |
+| `server/auth.ts` | Login/signup happy + error paths, rate limit |
+| `server/movies.ts` | Genre filter, search filter, 404 on unknown ID |
+| `server/bookings.ts` | Auth guard, seat booking, amount calculation |
 
-Verifies: password is hashed in DB, JWT is valid, protected routes
-accept/reject tokens, expired tokens return 403.
-```
+**Tools:** Vitest + React Testing Library (web), Vitest + Supertest (server)
 
-### PR title
-`test: add integration tests for booking and auth flows`
+### 3b — Integration Tests
 
-### Tests added (integration — Vitest + Supertest)
-```
-packages/server/src/__tests__/
-  booking-flow.test.ts
-    ✓ full booking: signup → login → get movies → book seats
-    ✓ booked seats are marked is_booked=1 in DB after booking
-    ✓ booking without token returns 401
-    ✓ booking with invalid token returns 403
+Test multiple real layers together — Express router + real SQLite (in-memory). No mocks.
 
-  auth-flow.test.ts
-    ✓ signup stores bcrypt hash, not plain text
-    ✓ login returns a valid signed JWT
-    ✓ protected route returns 200 with valid token
-    ✓ protected route returns 403 with expired token
-```
+**What to cover:**
+- Full booking flow: signup → login → get movies → select showtime → book seats → verify in DB
+- Auth flow: password is hashed in DB, JWT is valid, protected routes accept/reject tokens correctly
 
----
+**Tools:** Vitest + Supertest against an in-memory test DB (not `stagepass.db`)
 
-## Branch 10 — `test/e2e`
+### 3c — E2E Tests
 
-> Goal: full user journey tests in a real browser.
-> Dependencies: `test/integration` merged, app running.
+Run real user journeys in a real browser against the full running stack.
 
-### Commits
+**What to cover:**
+- Browse movies, filter by genre, search
+- View movie detail, select showtime, select seats, confirm booking
+- Booking appears in My Bookings
+- Signup and login flows
+- Unauthenticated access redirects to login
+- Session persists after page refresh
+- "Untitled Project X" shows graceful error (not blank screen)
+- New user My Bookings shows empty state (not infinite spinner)
 
-**Commit 1**
-```
-test(e2e): add Playwright config and browse/book user journey
-
-playwright.config.ts configured for local dev server.
-browse-and-book.spec.ts covers: browse, filter, search, view detail,
-select showtime, select seats, confirm booking, verify in My Bookings.
-```
-
-**Commit 2**
-```
-test(e2e): add auth and error state e2e tests
-
-auth.spec.ts: signup, login, redirect when unauthenticated, persist
-across page refresh.
-error-states.spec.ts: Untitled Project X shows graceful fallback,
-empty bookings shows empty state not spinner.
-```
-
-### PR title
-`test: add Playwright e2e tests for browse/book, auth, and error states`
-
-### Tests added (e2e — Playwright)
-```
-e2e/
-  browse-and-book.spec.ts
-    ✓ home page shows movie grid
-    ✓ genre filter shows only matching movies
-    ✓ search returns matching movies
-    ✓ clicking a movie opens detail page
-    ✓ selecting a showtime opens seat grid
-    ✓ selecting seats updates the total price
-    ✓ logged-in user can complete a booking end-to-end
-    ✓ completed booking appears in My Bookings
-
-  auth.spec.ts
-    ✓ new user can sign up
-    ✓ existing user can log in
-    ✓ unauthenticated access to /bookings redirects to /login
-    ✓ session persists after page refresh
-
-  error-states.spec.ts
-    ✓ Untitled Project X shows graceful error state, not a blank screen
-    ✓ new user My Bookings page shows empty state, not an infinite spinner
-```
-
----
-
-## Branch 11 — `ci/github-actions`
-
-> Goal: automate lint, tests, and Sonar scan on every push and PR.
-> Dependencies: all test/* branches merged.
-
-### Commits
-
-**Commit 1**
-```
-ci: add GitHub Actions workflow for lint and unit/integration tests
-
-Jobs: install → lint → test:coverage
-Runs on push to main and on all pull requests.
-```
-
-**Commit 2**
-```
-ci: add e2e job to GitHub Actions workflow
-
-Spins up the full stack (server + web), waits for readiness,
-then runs Playwright tests.
-```
-
-**Commit 3**
-```
-ci: add SonarQube scan job to GitHub Actions workflow
-
-Runs after test:coverage to upload coverage report.
-Requires SONAR_TOKEN secret.
-```
-
-### PR title
-`ci: add GitHub Actions pipeline — lint, test, sonar, e2e`
-
-### Tests added
-None — CI only runs existing tests.
-
----
-
-## Branch 12 — `chore/docker`
-
-> Goal: containerise the app for consistent local and production runs.
-> Dependencies: `ci/github-actions` merged.
-
-### Commits
-
-**Commit 1**
-```
-chore(docker): add Dockerfile for server
-
-Multi-stage build. Runs as non-root user. Exposes port 3001.
-```
-
-**Commit 2**
-```
-chore(docker): add Dockerfile for web
-
-Multi-stage: Vite build in node:20-alpine, served by nginx:alpine.
-Exposes port 80.
-```
-
-**Commit 3**
-```
-chore(docker): add docker-compose for full-stack local run
-
-docker-compose.yml starts server + web with correct env vars
-and a named volume for the SQLite database file.
-```
-
-### PR title
-`chore: add Dockerfiles and docker-compose for server and web`
-
-### Tests added
-None.
-
----
-
-## Full Branch and PR Order
-
-```
- 1. chore/tooling-setup         →  PR: "chore: add ESLint, SonarJS, and Prettier"
- 2. fix/null-crashes            →  PR: "fix: resolve null crashes and state mutation"
- 3. fix/error-boundary          →  PR: "fix: add ErrorBoundary to prevent app crashes"
- 4. perf/search                 →  PR: "perf: fix blocking search, add memoisation"
- 5. fix/auth-security           →  PR: "fix: harden auth — bcrypt, env, rate limit, zod"
- 6. feat/memoria-ui             →  PR: "feat: apply Memoria design system"
- 7. refactor/code-quality       →  PR: "refactor: types, constants, seed guard"
- 8. test/unit                   →  PR: "test: unit tests for components and routes"
- 9. test/integration            →  PR: "test: integration tests for booking and auth"
-10. test/e2e                    →  PR: "test: Playwright e2e tests"
-11. ci/github-actions           →  PR: "ci: GitHub Actions pipeline"
-12. chore/docker                →  PR: "chore: Dockerfiles and docker-compose"
-```
-
----
-
-## Test Type Summary
-
-| Type | Tool | Scope | Count |
-|------|------|-------|-------|
-| Unit | Vitest + RTL | Single component or handler, all deps mocked | ~25 |
-| Integration | Vitest + Supertest | API + real DB, no mocks | ~10 |
-| E2E | Playwright | Full browser, full stack, real user flows | ~15 |
-| Snapshot | Vitest + RTL | Design system class regressions | ~5 |
-| **Total** | | | **~55** |
+**Tools:** Playwright
 
 ### Coverage Targets
 
@@ -783,3 +288,43 @@ None.
 |---------|-------|----------|
 | `server` | ≥ 70% | ≥ 60% |
 | `web` | ≥ 60% | ≥ 50% |
+
+---
+
+## Phase 4 — CI Pipeline
+
+Once tests are in place, automate everything on push and PR. The pipeline should:
+
+1. Install dependencies
+2. Run lint
+3. Run unit + integration tests with coverage
+4. Run Sonar scan (upload coverage report)
+5. Run E2E tests against the full stack
+
+No PR should merge to `main` if the pipeline is red.
+
+**Tools:** GitHub Actions
+
+---
+
+## Phase 5 — Docker + Deployment
+
+Containerise both the server and web app for consistent, reproducible deployments.
+
+- `packages/server/Dockerfile` — multi-stage, runs as non-root, exposes 3001
+- `packages/web/Dockerfile` — Vite build stage + nginx:alpine serve stage
+- `docker-compose.yml` at root — wires server + web with a named volume for the SQLite DB
+
+Once Docker is working, add a deploy job to the CI pipeline that builds and pushes images on merge to `main`.
+
+---
+
+## Test Type Summary
+
+| Type | Tool | Scope | Approx. count |
+|------|------|-------|---------------|
+| Unit | Vitest + RTL | Single component / handler, deps mocked | ~25 |
+| Integration | Vitest + Supertest | API + real in-memory DB, no mocks | ~10 |
+| E2E | Playwright | Full browser, full stack, real user flows | ~15 |
+| Snapshot | Vitest + RTL | Design system class regressions | ~5 |
+| **Total** | | | **~55** |

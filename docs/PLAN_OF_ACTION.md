@@ -60,7 +60,7 @@ pnpm dev           # Web: http://localhost:3000 | API: http://localhost:3001
 
 ### 0.3 Read ISSUES_IN_THE_CODEBASE.md
 
-The full catalogue of 33 known issues is documented in [`ISSUES_IN_THE_CODEBASE.md`](../ISSUES_IN_THE_CODEBASE.md). Review it in full before starting any work.
+The full catalogue of 33 known issues is documented in [`docs/ISSUES_IN_THE_CODEBASE.md`](./ISSUES_IN_THE_CODEBASE.md). Review it in full before starting any work.
 
 ---
 
@@ -147,39 +147,65 @@ Add format script:
 "format": "prettier --write packages/*/src"
 ```
 
-### 1.4 Set up SonarCloud
+### 1.4 Static analysis — local Sonar
 
-1. Push repo to GitHub
-2. Go to [sonarcloud.io](https://sonarcloud.io) → import repository
-3. Note the `SONAR_TOKEN` and `SONAR_PROJECT_KEY`
-4. Create `sonar-project.properties` at root:
+`eslint-plugin-sonarjs` (already added in 1.2) runs the same rules as SonarQube without a server. Use it as the primary Sonar gate.
 
-```properties
-sonar.projectKey=<your-project-key>
-sonar.organization=<your-org>
-sonar.sources=packages/web/src,packages/server/src
-sonar.exclusions=**/node_modules/**,**/dist/**,**/*.db
-sonar.javascript.lcov.reportPaths=coverage/lcov.info
-```
-
-5. First scan (local):
-
+**Option A — eslint-plugin-sonarjs (zero setup, recommended for local dev):**
 ```bash
-npx sonar-scanner \
-  -Dsonar.token=$SONAR_TOKEN
+pnpm lint
+# Flags: cognitive complexity, no-identical-expressions, duplicated blocks, no-ignored-return
 ```
 
-**Expected initial findings from Sonar:**
+**Option B — Full SonarQube dashboard via Docker:**
+```bash
+docker run -d --name sonarqube -p 9000:9000 sonarqube:lts-community
+# Wait ~60 seconds, then:
+npx sonar-scanner \
+  -Dsonar.projectKey=stagepass \
+  -Dsonar.sources=packages/web/src,packages/server/src \
+  -Dsonar.host.url=http://localhost:9000 \
+  -Dsonar.login=admin \
+  -Dsonar.password=admin
+# View at http://localhost:9000
+```
+
+**Expected initial findings:**
 - Cognitive complexity violations (blocking while loop, nested conditionals)
 - Security hotspots (hardcoded secret, plain text passwords)
 - Code smells (magic strings, `any` types, missing error handling)
 - Reliability bugs (null dereference, state mutation)
 
-### 1.5 Commit the quality baseline
+### 1.5 Set up Commitlint + Husky
+
+Enforce commit message format and run quality checks automatically on every `git commit`.
 
 ```bash
-git add eslint.config.js .prettierrc sonar-project.properties package.json docs/lint-baseline.txt
-git commit -m "chore: add ESLint, SonarJS, Prettier — establish quality baseline"
+pnpm add -Dw @commitlint/cli @commitlint/config-conventional husky
+pnpm exec husky init
+```
+
+Create `commitlint.config.js` at root:
+```js
+export default { extends: ['@commitlint/config-conventional'] }
+```
+
+`.husky/pre-commit`:
+```sh
+pnpm lint
+pnpm format --check
+```
+
+`.husky/commit-msg`:
+```sh
+pnpm exec commitlint --edit $1
+```
+
+### 1.6 Commit the quality baseline
+
+```bash
+git add eslint.config.js .prettierrc commitlint.config.js .husky package.json docs/lint-baseline.txt
+git commit -m "chore: add ESLint, SonarJS, Prettier, Commitlint, Husky — quality baseline"
 ```
 
 ---
@@ -478,10 +504,11 @@ Extend `.github/workflows/ci.yml` with a deploy job:
 ## Execution Order Summary
 
 ```
-Phase 0  Understand       Read code, reproduce bugs, review ISSUES_IN_THE_CODEBASE.md
-Phase 1  Analyse          ESLint + SonarJS + Prettier + SonarCloud baseline scan
-Phase 2  Fix              Crashes → Performance → Security → Memoria UI → Quality
-Phase 3  Test             Vitest unit + integration tests, coverage thresholds
+Phase 0  Understand       Read code, reproduce bugs, review docs/ISSUES_IN_THE_CODEBASE.md
+Phase 1  Tooling          ESLint + SonarJS + Prettier + Commitlint + Husky; capture lint baseline
+Phase 2  Fix              Crashes (2a) → ErrorBoundary (2b) → Performance (2c)
+                          → Security (2d) → Memoria UI (2e) → Code Quality (2f)
+Phase 3  Test             Unit (3a) + Integration (3b) + E2E Playwright (3c); coverage thresholds
 Phase 4  CI               GitHub Actions: lint → test → Sonar scan → quality gate
 Phase 5  Deploy           Docker + docker-compose + deploy job in CI
 ```
@@ -494,8 +521,10 @@ The codebase is considered "done" when:
 
 - [ ] All 4 crash bugs are fixed and manually verified
 - [ ] ESLint passes with zero errors
-- [ ] SonarCloud Quality Gate is green
+- [ ] Local Sonar (eslint-plugin-sonarjs) flags no new issues
+- [ ] Commitlint + Husky enforce commit format and lint on every commit
 - [ ] Server test coverage ≥ 70%, web ≥ 60%
+- [ ] E2E tests cover the full booking flow in a real browser
 - [ ] Memoria design system applied to all 5 pages
 - [ ] Passwords hashed, JWT secret in `.env`, rate limiting on auth
 - [ ] CI pipeline passes on every push to `main`
