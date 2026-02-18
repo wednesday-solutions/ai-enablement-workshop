@@ -62,7 +62,9 @@ describe('auth integration — signup → login → protected route', () => {
   it('stored password is hashed — not the plain text value', async () => {
     // Access the mocked db
     const { default: db } = await import('./db');
-    const user = db.prepare('SELECT password FROM users WHERE email = ?').get(testUser.email) as { password: string };
+    const user = db.prepare('SELECT password FROM users WHERE email = ?').get(testUser.email) as {
+      password: string;
+    };
     expect(user.password).not.toBe(testUser.password);
     expect(user.password).toMatch(/^\$2[ab]\$/); // bcrypt hash prefix
   });

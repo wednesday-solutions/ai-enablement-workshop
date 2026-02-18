@@ -32,7 +32,8 @@ describe('AuthContext', () => {
   it('login stores token and user in localStorage', async () => {
     global.fetch = vi.fn().mockResolvedValue({
       ok: true,
-      json: () => Promise.resolve({ token: 'tok123', user: { id: 1, name: 'Alice', email: 'a@b.com' } }),
+      json: () =>
+        Promise.resolve({ token: 'tok123', user: { id: 1, name: 'Alice', email: 'a@b.com' } }),
     });
 
     renderProvider();
@@ -45,7 +46,10 @@ describe('AuthContext', () => {
 
   it('logout clears token and user from localStorage', async () => {
     localStorage.setItem('stagepass_token', 'existing-tok');
-    localStorage.setItem('stagepass_user', JSON.stringify({ id: 1, name: 'Alice', email: 'a@b.com' }));
+    localStorage.setItem(
+      'stagepass_user',
+      JSON.stringify({ id: 1, name: 'Alice', email: 'a@b.com' })
+    );
 
     renderProvider();
     await waitFor(() => expect(screen.getByTestId('token').textContent).toBe('existing-tok'));
@@ -61,7 +65,10 @@ describe('AuthContext', () => {
 
   it('rehydrates user from localStorage on mount', async () => {
     localStorage.setItem('stagepass_token', 'saved-token');
-    localStorage.setItem('stagepass_user', JSON.stringify({ id: 2, name: 'Bob', email: 'b@c.com' }));
+    localStorage.setItem(
+      'stagepass_user',
+      JSON.stringify({ id: 2, name: 'Bob', email: 'b@c.com' })
+    );
 
     renderProvider();
 
