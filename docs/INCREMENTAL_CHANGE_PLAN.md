@@ -79,6 +79,7 @@ Each session is self-contained. Start a new Claude Code session, tell it to work
 | **ci** | `ci/github-actions` | `.github/workflows/ci.yml` (new) | `ci: add GitHub Actions pipeline — lint, test, coverage` |
 | **2b** | `feat/error-boundary` | `src/ErrorBoundary.tsx` (new), `App.tsx`, `ErrorBoundary.test.tsx` (new) | `feat: add ErrorBoundary around route tree` |
 | **2c** | `perf/remove-blocking-search` | `Home.tsx`, `Home.test.tsx` | `perf: remove blocking while loop, add useMemo and useCallback` |
+| **2c+** | `fix/home-fetch-errors` | `Home.tsx`, `Home.test.tsx` | `fix: log fetch errors instead of silently swallowing them` |
 | **2d** | `fix/auth-security` | `server/src/routes/auth.ts`, `server/src/seed.ts`, `.env.example`, `AuthContext.tsx`, `auth.test.ts`, `auth.integration.test.ts`, `AuthContext.test.tsx` | `fix: hash passwords, move JWT secret to env, add rate limiting, persist token` |
 | **2e** | `feat/memoria-design-system` | All `pages/*.tsx`, `App.tsx`, `index.css`, snapshot tests | `feat: apply Memoria dark design system across all pages` |
 | **2f** | `refactor/code-quality` | `server/src/routes/*.ts`, `server/src/constants.ts` (new), `server/src/seed.ts` | `refactor: typed routes, extract magic strings, add seed guard` |
@@ -104,6 +105,7 @@ The session will have everything it needs from those two docs.
 | ci | CI pipeline — gates all subsequent PRs | 20 min |
 | 2b | Add ErrorBoundary + unit tests | 20 min |
 | 2c | Fix performance + unit tests | 20 min |
+| 2c+ | Fix silent fetch error swallowing (Gemini follow-up) | 10 min |
 | 2d | Fix security + unit + integration tests | 60 min |
 | 2e | Apply Memoria design system + snapshot tests | 2 hrs |
 | 2f | Code quality cleanup | 30 min |
@@ -237,6 +239,32 @@ The blocking `while (Date.now() - start < 2000)` loop in `Home.tsx` freezes the 
 
 **Tests to write (same PR):**
 - `Home.test.tsx`: search filter returns correct subset without blocking; genre filter returns correct subset; combined search + genre filter works correctly
+
+### 2c+ — Fetch Error Logging (Gemini review follow-up)
+
+> Flagged in the Gemini code review on PR #5 ([inline comment on `Home.tsx` line 36](https://github.com/wednesday-solutions/ai-enablement-workshop/pull/5)).
+
+Both `fetch` calls in `Home.tsx` currently use `.catch(() => {})` — a silent no-op that makes failures invisible during debugging and in production logs. Replace with a logged catch:
+
+```tsx
+// Before
+.catch(() => {})
+
+// After (movies fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch movies:', err);
+})
+
+// After (genres fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch genres:', err);
+})
+```
+
+Also remove the `void` keyword from the `fetch(...)` call on line 23 — it is non-idiomatic and unnecessary (Gemini comment on line 23).
+
+**Tests to write (same PR):**
+- `Home.test.tsx`: when movies fetch fails, `console.error` is called with the error; when genres fetch fails, `console.error` is called with the error
 
 ### 2d — Security (Priority: High)
 

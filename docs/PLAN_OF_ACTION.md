@@ -234,6 +234,35 @@ git commit -m "chore: add ESLint, SonarJS, Prettier, Commitlint, Husky — quali
 | 2.3 | `Home.tsx` | Wrap filter logic in `useMemo`, wrap handlers in `useCallback` |
 | 2.2 | `Home.tsx` | Add client-side pagination (show 12 at a time, "Load More") |
 
+### 2c+ — Fetch Error Logging (Gemini review follow-up)
+
+> Flagged in the Gemini code review on PR #5 — two inline comments on `Home.tsx`.
+
+| Ref | File | Fix |
+|-----|------|-----|
+| G1 | `Home.tsx` line 23 | Remove `void` from `fetch(...)` calls — non-idiomatic in TypeScript |
+| G2 | `Home.tsx` line 36 | Replace silent `.catch(() => {})` with logged catches — silent no-ops hide errors in prod |
+
+```tsx
+// Before
+.catch(() => {})
+
+// After (movies fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch movies:', err);
+})
+
+// After (genres fetch)
+.catch((err: unknown) => {
+  console.error('Failed to fetch genres:', err);
+})
+```
+
+**Tests to write (same PR):**
+- `Home.test.tsx`: when movies fetch fails, `console.error` is called with the error; when genres fetch fails, `console.error` is called with the error
+
+---
+
 ### Priority 3 — Security
 
 | Ref | File | Fix |
@@ -475,7 +504,7 @@ Phase 0    Understand       Read code, reproduce bugs, review docs/ISSUES_IN_THE
 Phase 1    Tooling          ESLint + SonarJS + Prettier + Commitlint + Husky; lint baseline
 Phase 2a   Fix + Tests      Crash fixes; unit tests in the same PR
 Phase 2.ci CI Pipeline      GitHub Actions — gates every subsequent PR automatically
-Phase 2b–f Fix + Tests      ErrorBoundary → Performance → Security → Memoria → Quality
+Phase 2b–f Fix + Tests      ErrorBoundary → Performance → Fetch error logging → Security → Memoria → Quality
                              Each PR includes unit + integration tests for its own changes
 Phase 3    E2E Tests        Playwright; full user journeys in a real browser
 Phase 4    Deploy           Docker + docker-compose + deploy job in CI
