@@ -21,15 +21,15 @@ function Home() {
 
   useEffect(() => {
     fetch('/api/movies')
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setMovies(data);
         setLoading(false);
       });
 
     fetch('/api/movies/meta/genres')
-      .then(res => res.json())
-      .then(data => setGenres(data));
+      .then((res) => res.json())
+      .then((data) => setGenres(data));
   }, []);
 
   // BUG: Search is implemented with a blocking computation that freezes the UI
@@ -37,7 +37,7 @@ function Home() {
     let result = movies;
 
     if (selectedGenre) {
-      result = result.filter(m => m.genre === selectedGenre);
+      result = result.filter((m) => m.genre === selectedGenre);
     }
 
     if (search) {
@@ -47,19 +47,19 @@ function Home() {
         // Simulate heavy search computation
         Math.random();
       }
-      result = result.filter(m =>
-        m.title.toLowerCase().includes(search.toLowerCase())
-      );
+      result = result.filter((m) => m.title.toLowerCase().includes(search.toLowerCase()));
     }
 
     return result;
   })();
 
   if (loading) {
-    return <div style={{ textAlign: 'center', padding: '40px' }}>
-      <div style={{ fontSize: '24px' }}>Loading...</div>
-      <div style={{ fontSize: '48px', marginTop: '10px' }}>⏳</div>
-    </div>;
+    return (
+      <div style={{ textAlign: 'center', padding: '40px' }}>
+        <div style={{ fontSize: '24px' }}>Loading...</div>
+        <div style={{ fontSize: '48px', marginTop: '10px' }}>⏳</div>
+      </div>
+    );
   }
 
   return (
@@ -72,16 +72,15 @@ function Home() {
           type="text"
           placeholder="Search movies..."
           value={search}
-          onChange={e => setSearch(e.target.value)}
+          onChange={(e) => setSearch(e.target.value)}
           style={{ width: '300px' }}
         />
-        <select
-          value={selectedGenre}
-          onChange={e => setSelectedGenre(e.target.value)}
-        >
+        <select value={selectedGenre} onChange={(e) => setSelectedGenre(e.target.value)}>
           <option value="">All Genres</option>
-          {genres.map(g => (
-            <option key={g} value={g}>{g}</option>
+          {genres.map((g) => (
+            <option key={g} value={g}>
+              {g}
+            </option>
           ))}
         </select>
         <span style={{ marginLeft: '10px', color: '#666' }}>
@@ -91,12 +90,14 @@ function Home() {
 
       {/* Movie grid - inconsistent inline styles */}
       <div>
-        {filteredMovies.map(movie => (
+        {filteredMovies.map((movie) => (
           <div key={movie.id} className="movie-card">
             <img
               src={movie.poster_url}
               alt={movie.title}
-              onError={(e: any) => { e.target.src = 'https://via.placeholder.com/300x450?text=No+Image'; }}
+              onError={(e: any) => {
+                e.target.src = 'https://via.placeholder.com/300x450?text=No+Image';
+              }}
             />
             <h3 style={{ fontSize: '16px', margin: '8px 0 4px' }}>{movie.title}</h3>
             <p style={{ fontSize: '12px', color: '#666', margin: '2px 0' }}>

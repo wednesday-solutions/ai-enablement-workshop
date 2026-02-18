@@ -32,15 +32,15 @@ function SeatSelection() {
 
   useEffect(() => {
     fetch(`/api/seats/showtime/${showtimeId}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setSeats(data);
         setLoading(false);
       });
 
     fetch(`/api/showtimes/${showtimeId}`)
-      .then(res => res.json())
-      .then(data => setShowtime(data));
+      .then((res) => res.json())
+      .then((data) => setShowtime(data));
   }, [showtimeId]);
 
   const toggleSeat = (seatId: number, isBooked: number) => {
@@ -78,13 +78,13 @@ function SeatSelection() {
       method: 'POST',
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${token}`
+        Authorization: `Bearer ${token}`,
       },
       body: JSON.stringify({
         showtimeId: Number(showtimeId),
         seatIds: selectedSeats,
-        totalAmount: selectedSeats.length * (showtime?.price || 0)
-      })
+        totalAmount: selectedSeats.length * (showtime?.price || 0),
+      }),
     });
 
     const data = await res.json();
@@ -100,7 +100,7 @@ function SeatSelection() {
 
   // Group seats by row
   const rows: { [key: string]: Seat[] } = {};
-  seats.forEach(seat => {
+  seats.forEach((seat) => {
     if (!rows[seat.row]) rows[seat.row] = [];
     rows[seat.row].push(seat);
   });
@@ -115,41 +115,58 @@ function SeatSelection() {
       )}
 
       {/* Screen indicator */}
-      <div style={{
-        textAlign: 'center',
-        margin: '30px auto 20px',
-        maxWidth: '500px'
-      }}>
-        <div style={{
-          background: '#ddd',
-          padding: '8px',
-          borderRadius: '4px',
-          fontSize: '12px',
-          color: '#666'
-        }}>
+      <div
+        style={{
+          textAlign: 'center',
+          margin: '30px auto 20px',
+          maxWidth: '500px',
+        }}
+      >
+        <div
+          style={{
+            background: '#ddd',
+            padding: '8px',
+            borderRadius: '4px',
+            fontSize: '12px',
+            color: '#666',
+          }}
+        >
           SCREEN
         </div>
       </div>
 
       {/* Seat grid */}
       <div style={{ textAlign: 'center' }}>
-        {Object.keys(rows).sort().map(row => (
-          <div key={row} style={{ marginBottom: '4px' }}>
-            <span style={{ display: 'inline-block', width: '20px', textAlign: 'right', marginRight: '8px', fontSize: '12px', color: '#666' }}>
-              {row}
-            </span>
-            {rows[row].sort((a, b) => a.number - b.number).map(seat => (
-              <div
-                key={seat.id}
-                className={`seat ${seat.is_booked ? 'booked' : ''} ${selectedSeats.includes(seat.id) ? 'selected' : ''}`}
-                onClick={() => toggleSeat(seat.id, seat.is_booked)}
-                title={`${seat.row}${seat.number}`}
+        {Object.keys(rows)
+          .sort()
+          .map((row) => (
+            <div key={row} style={{ marginBottom: '4px' }}>
+              <span
+                style={{
+                  display: 'inline-block',
+                  width: '20px',
+                  textAlign: 'right',
+                  marginRight: '8px',
+                  fontSize: '12px',
+                  color: '#666',
+                }}
               >
-                {seat.number}
-              </div>
-            ))}
-          </div>
-        ))}
+                {row}
+              </span>
+              {rows[row]
+                .sort((a, b) => a.number - b.number)
+                .map((seat) => (
+                  <div
+                    key={seat.id}
+                    className={`seat ${seat.is_booked ? 'booked' : ''} ${selectedSeats.includes(seat.id) ? 'selected' : ''}`}
+                    onClick={() => toggleSeat(seat.id, seat.is_booked)}
+                    title={`${seat.row}${seat.number}`}
+                  >
+                    {seat.number}
+                  </div>
+                ))}
+            </div>
+          ))}
       </div>
 
       {/* Legend */}
@@ -166,13 +183,15 @@ function SeatSelection() {
       </div>
 
       {/* Booking summary */}
-      <div style={{
-        marginTop: '20px',
-        padding: '15px',
-        background: 'white',
-        border: '1px solid #ccc',
-        textAlign: 'center'
-      }}>
+      <div
+        style={{
+          marginTop: '20px',
+          padding: '15px',
+          background: 'white',
+          border: '1px solid #ccc',
+          textAlign: 'center',
+        }}
+      >
         <p>Selected: {selectedSeats.length} seat(s)</p>
         <p style={{ fontSize: '20px', fontWeight: 'bold' }}>
           Total: ₹{selectedSeats.length * (showtime?.price || 0)}
@@ -183,7 +202,7 @@ function SeatSelection() {
           style={{
             padding: '12px 40px',
             fontSize: '16px',
-            background: selectedSeats.length === 0 ? '#ccc' : '#4444ff'
+            background: selectedSeats.length === 0 ? '#ccc' : '#4444ff',
           }}
         >
           {booking ? 'Booking...' : 'Confirm Booking'}

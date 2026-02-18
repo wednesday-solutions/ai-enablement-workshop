@@ -37,7 +37,7 @@ function Login() {
             <input
               type="text"
               value={name}
-              onChange={e => setName(e.target.value)}
+              onChange={(e) => setName(e.target.value)}
               style={{ width: '100%', boxSizing: 'border-box' }}
               required
             />
@@ -48,7 +48,7 @@ function Login() {
           <input
             type="email"
             value={email}
-            onChange={e => setEmail(e.target.value)}
+            onChange={(e) => setEmail(e.target.value)}
             style={{ width: '100%', boxSizing: 'border-box' }}
             required
           />
@@ -58,7 +58,7 @@ function Login() {
           <input
             type="password"
             value={password}
-            onChange={e => setPassword(e.target.value)}
+            onChange={(e) => setPassword(e.target.value)}
             style={{ width: '100%', boxSizing: 'border-box' }}
             required
           />
@@ -72,14 +72,30 @@ function Login() {
         {isSignup ? 'Already have an account?' : "Don't have an account?"}
         <button
           onClick={() => setIsSignup(!isSignup)}
-          style={{ background: 'transparent', color: 'blue', border: 'none', textDecoration: 'underline', cursor: 'pointer' }}
+          style={{
+            background: 'transparent',
+            color: 'blue',
+            border: 'none',
+            textDecoration: 'underline',
+            cursor: 'pointer',
+          }}
         >
           {isSignup ? 'Login' : 'Sign Up'}
         </button>
       </p>
-      <div style={{ marginTop: '20px', padding: '10px', background: '#ffe0b2', border: '1px solid #ff9800', fontSize: '13px' }}>
-        <b>Demo credentials:</b><br />
-        Email: john@example.com<br />
+      <div
+        style={{
+          marginTop: '20px',
+          padding: '10px',
+          background: '#ffe0b2',
+          border: '1px solid #ff9800',
+          fontSize: '13px',
+        }}
+      >
+        <b>Demo credentials:</b>
+        <br />
+        Email: john@example.com
+        <br />
         Password: password123
       </div>
     </div>

@@ -6,14 +6,18 @@ const router = Router();
 
 // GET bookings for user
 router.get('/', authenticateToken, (req: any, res) => {
-  const bookings = db.prepare(`
+  const bookings = db
+    .prepare(
+      `
     SELECT b.*, m.title as movie_title, s.venue, s.date as show_date, s.time as show_time
     FROM bookings b
     JOIN showtimes s ON b.showtime_id = s.id
     JOIN movies m ON s.movie_id = m.id
     WHERE b.user_id = ?
     ORDER BY b.booking_date DESC
-  `).all(req.userId);
+  `
+    )
+    .all(req.userId);
   res.json(bookings);
 });
 
@@ -32,10 +36,14 @@ router.post('/', authenticateToken, (req: any, res) => {
   }
 
   // Create booking
-  const result = db.prepare(`
+  const result = db
+    .prepare(
+      `
     INSERT INTO bookings (user_id, showtime_id, seats, total_amount)
     VALUES (?, ?, ?, ?)
-  `).run(req.userId, showtimeId, seatIds.join(','), totalAmount);
+  `
+    )
+    .run(req.userId, showtimeId, seatIds.join(','), totalAmount);
 
   res.status(201).json({ id: result.lastInsertRowid, message: 'Booking confirmed!' });
 });
