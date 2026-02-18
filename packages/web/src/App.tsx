@@ -14,7 +14,9 @@ function Header() {
   return (
     <div className="header">
       <div>
-        <Link to="/" style={{ fontSize: '20px', fontWeight: 'bold' }}>StagePass</Link>
+        <Link to="/" style={{ fontSize: '20px', fontWeight: 'bold' }}>
+          StagePass
+        </Link>
       </div>
       <div>
         <Link to="/">Home</Link>
@@ -22,7 +24,12 @@ function Header() {
           <>
             <Link to="/bookings">My Bookings</Link>
             <span style={{ margin: '0 10px' }}>Hi, {user.name}</span>
-            <button onClick={logout} style={{ background: 'transparent', border: '1px solid white', padding: '4px 8px' }}>Logout</button>
+            <button
+              onClick={logout}
+              style={{ background: 'transparent', border: '1px solid white', padding: '4px 8px' }}
+            >
+              Logout
+            </button>
           </>
         ) : (
           <Link to="/login">Login</Link>

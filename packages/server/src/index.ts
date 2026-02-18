@@ -7,7 +7,7 @@ import bookingsRouter from './routes/bookings';
 import authRouter from './routes/auth';
 
 const app = express();
-const PORT = 3001;
+const PORT = 3003;
 
 app.use(cors());
 app.use(express.json());

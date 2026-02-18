@@ -35,15 +35,15 @@ function MovieDetail() {
   useEffect(() => {
     // BUG: No error handling - if movie doesn't exist, crashes
     fetch(`/api/movies/${id}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setMovie(data);
         setLoading(false);
       });
 
     fetch(`/api/showtimes/movie/${id}`)
-      .then(res => res.json())
-      .then(data => {
+      .then((res) => res.json())
+      .then((data) => {
         setShowtimes(data);
         if (data.length > 0) {
           setSelectedDate(data[0].date);
@@ -54,8 +54,8 @@ function MovieDetail() {
   if (loading) return <div>Loading...</div>;
 
   // BUG: No null check on movie - will crash if movie is null
-  const dates = [...new Set(showtimes.map(s => s.date))];
-  const filteredShowtimes = showtimes.filter(s => s.date === selectedDate);
+  const dates = [...new Set(showtimes.map((s) => s.date))];
+  const filteredShowtimes = showtimes.filter((s) => s.date === selectedDate);
 
   return (
     <div>
@@ -65,13 +65,19 @@ function MovieDetail() {
           <img
             src={movie!.poster_url}
             alt={movie!.title}
-            style={{ width: '300px', height: '450px', objectFit: 'cover', border: '2px solid #ccc' }}
+            style={{
+              width: '300px',
+              height: '450px',
+              objectFit: 'cover',
+              border: '2px solid #ccc',
+            }}
           />
         </div>
         <div style={{ flex: 1 }}>
           <h1 style={{ margin: '0 0 10px' }}>{movie!.title}</h1>
           <p style={{ color: '#666' }}>
-            {movie!.genre} | {movie!.duration} min | {movie!.language} | ⭐ {movie!.rating.toFixed(1)}
+            {movie!.genre} | {movie!.duration} min | {movie!.language} | ⭐{' '}
+            {movie!.rating.toFixed(1)}
           </p>
           <p style={{ marginTop: '10px' }}>
             <b>Director:</b> {movie!.director}
@@ -82,7 +88,8 @@ function MovieDetail() {
           </p>
           <p style={{ marginTop: '10px', lineHeight: '1.6' }}>
             {/* BUG: Accessing .length on potentially null synopsis */}
-            <b>Synopsis:</b> {movie!.synopsis.length > 0 ? movie!.synopsis : 'No synopsis available'}
+            <b>Synopsis:</b>{' '}
+            {movie!.synopsis.length > 0 ? movie!.synopsis : 'No synopsis available'}
           </p>
         </div>
       </div>
@@ -93,7 +100,7 @@ function MovieDetail() {
 
         {/* Date picker - ugly pills */}
         <div style={{ marginBottom: '15px' }}>
-          {dates.map(date => (
+          {dates.map((date) => (
             <button
               key={date}
               onClick={() => setSelectedDate(date)}
@@ -103,24 +110,31 @@ function MovieDetail() {
                 margin: '0 4px',
                 padding: '8px 16px',
                 border: 'none',
-                cursor: 'pointer'
+                cursor: 'pointer',
               }}
             >
-              {new Date(date).toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}
+              {new Date(date).toLocaleDateString('en-US', {
+                weekday: 'short',
+                month: 'short',
+                day: 'numeric',
+              })}
             </button>
           ))}
         </div>
 
         {/* Showtime list */}
         <div>
-          {filteredShowtimes.map(st => (
-            <div key={st.id} style={{
-              display: 'inline-block',
-              border: '1px solid #ccc',
-              padding: '12px 20px',
-              margin: '4px',
-              background: 'white'
-            }}>
+          {filteredShowtimes.map((st) => (
+            <div
+              key={st.id}
+              style={{
+                display: 'inline-block',
+                border: '1px solid #ccc',
+                padding: '12px 20px',
+                margin: '4px',
+                background: 'white',
+              }}
+            >
               <div style={{ fontWeight: 'bold' }}>{st.time}</div>
               <div style={{ fontSize: '12px', color: '#666' }}>{st.venue}</div>
               <div style={{ fontSize: '14px', marginTop: '4px' }}>₹{st.price}</div>
