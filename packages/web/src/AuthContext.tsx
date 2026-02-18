@@ -16,17 +16,25 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
+const STORAGE_KEY_TOKEN = 'stagepass_token';
+const STORAGE_KEY_USER = 'stagepass_user';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
 
   // Rehydrate from localStorage on mount
   useEffect(() => {
-    const storedToken = localStorage.getItem('auth_token');
-    const storedUser = localStorage.getItem('auth_user');
+    const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+    const storedUser = localStorage.getItem(STORAGE_KEY_USER);
     if (storedToken && storedUser) {
-      setToken(storedToken);
-      setUser(JSON.parse(storedUser) as User);
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser) as User);
+      } catch {
+        localStorage.removeItem(STORAGE_KEY_TOKEN);
+        localStorage.removeItem(STORAGE_KEY_USER);
+      }
     }
   }, []);
 
@@ -37,11 +45,11 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password })
     });
     if (!res.ok) throw new Error('Login failed');
-    const data = await res.json();
+    const data = await res.json() as { token: string; user: User };
+    localStorage.setItem(STORAGE_KEY_TOKEN, data.token);
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user));
     setUser(data.user);
     setToken(data.token);
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('auth_user', JSON.stringify(data.user));
   };
 
   const signup = async (name: string, email: string, password: string) => {
@@ -51,18 +59,18 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ name, email, password })
     });
     if (!res.ok) throw new Error('Signup failed');
-    const data = await res.json();
+    const data = await res.json() as { token: string; user: User };
+    localStorage.setItem(STORAGE_KEY_TOKEN, data.token);
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user));
     setUser(data.user);
     setToken(data.token);
-    localStorage.setItem('auth_token', data.token);
-    localStorage.setItem('auth_user', JSON.stringify(data.user));
   };
 
   const logout = () => {
+    localStorage.removeItem(STORAGE_KEY_TOKEN);
+    localStorage.removeItem(STORAGE_KEY_USER);
     setUser(null);
     setToken(null);
-    localStorage.removeItem('auth_token');
-    localStorage.removeItem('auth_user');
   };
 
   return (
