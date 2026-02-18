@@ -36,9 +36,7 @@ describe('AuthContext', () => {
     });
 
     renderProvider();
-    await act(async () => {
-      screen.getByText('Login').click();
-    });
+    screen.getByText('Login').click();
 
     await waitFor(() => expect(screen.getByTestId('token').textContent).toBe('tok123'));
     expect(localStorage.getItem('stagepass_token')).toBe('tok123');
@@ -56,7 +54,7 @@ describe('AuthContext', () => {
       screen.getByText('Logout').click();
     });
 
-    expect(screen.getByTestId('token').textContent).toBe('none');
+    await waitFor(() => expect(screen.getByTestId('token').textContent).toBe('none'));
     expect(localStorage.getItem('stagepass_token')).toBeNull();
     expect(localStorage.getItem('stagepass_user')).toBeNull();
   });
