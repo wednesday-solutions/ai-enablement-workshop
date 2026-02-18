@@ -97,6 +97,6 @@ describe('MyBookings — loading state', () => {
 
     renderMyBookings()
 
-    expect(screen.getByText(/Please login to view your bookings/)).toBeInTheDocument()
+    expect(screen.getByText(/Sign in to view your bookings/)).toBeInTheDocument()
   })
 })
