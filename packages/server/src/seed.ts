@@ -1,4 +1,11 @@
+import 'dotenv/config';
+import bcrypt from 'bcryptjs';
 import db from './db';
+
+if (process.env.NODE_ENV === 'production') {
+  console.error('ERROR: seed.ts must not be run against a production database.');
+  process.exit(1);
+}
 
 // Clear existing data
 db.exec('DELETE FROM bookings');
@@ -8,11 +15,12 @@ db.exec('DELETE FROM movies');
 db.exec('DELETE FROM users');
 db.exec("DELETE FROM sqlite_sequence WHERE name IN ('bookings','seats','showtimes','movies','users')");
 
-// Seed users
+// Seed users — passwords are hashed (bcrypt, cost 10)
 const insertUser = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)');
-insertUser.run('John Doe', 'john@example.com', 'password123');
-insertUser.run('Jane Smith', 'jane@example.com', 'password123');
-insertUser.run('Raj Patel', 'raj@example.com', 'password123');
+const seedPassword = bcrypt.hashSync('password123', 10);
+insertUser.run('John Doe', 'john@example.com', seedPassword);
+insertUser.run('Jane Smith', 'jane@example.com', seedPassword);
+insertUser.run('Raj Patel', 'raj@example.com', seedPassword);
 
 // Seed movies - real movies with TMDB poster URLs
 const insertMovie = db.prepare(`

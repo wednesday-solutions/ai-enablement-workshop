@@ -1,4 +1,4 @@
-import React, { createContext, useContext, useState } from 'react';
+import React, { createContext, useContext, useState, useEffect } from 'react';
 
 interface User {
   id: number;
@@ -16,9 +16,27 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType>(null!);
 
+const STORAGE_KEY_TOKEN = 'stagepass_token';
+const STORAGE_KEY_USER = 'stagepass_user';
+
 export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [user, setUser] = useState<User | null>(null);
   const [token, setToken] = useState<string | null>(null);
+
+  // Rehydrate from localStorage on mount
+  useEffect(() => {
+    const storedToken = localStorage.getItem(STORAGE_KEY_TOKEN);
+    const storedUser = localStorage.getItem(STORAGE_KEY_USER);
+    if (storedToken && storedUser) {
+      try {
+        setToken(storedToken);
+        setUser(JSON.parse(storedUser) as User);
+      } catch {
+        localStorage.removeItem(STORAGE_KEY_TOKEN);
+        localStorage.removeItem(STORAGE_KEY_USER);
+      }
+    }
+  }, []);
 
   const login = async (email: string, password: string) => {
     const res = await fetch('/api/auth/login', {
@@ -27,7 +45,9 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ email, password })
     });
     if (!res.ok) throw new Error('Login failed');
-    const data = await res.json();
+    const data = await res.json() as { token: string; user: User };
+    localStorage.setItem(STORAGE_KEY_TOKEN, data.token);
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user));
     setUser(data.user);
     setToken(data.token);
   };
@@ -39,12 +59,16 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
       body: JSON.stringify({ name, email, password })
     });
     if (!res.ok) throw new Error('Signup failed');
-    const data = await res.json();
+    const data = await res.json() as { token: string; user: User };
+    localStorage.setItem(STORAGE_KEY_TOKEN, data.token);
+    localStorage.setItem(STORAGE_KEY_USER, JSON.stringify(data.user));
     setUser(data.user);
     setToken(data.token);
   };
 
   const logout = () => {
+    localStorage.removeItem(STORAGE_KEY_TOKEN);
+    localStorage.removeItem(STORAGE_KEY_USER);
     setUser(null);
     setToken(null);
   };
