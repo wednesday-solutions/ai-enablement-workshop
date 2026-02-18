@@ -6,11 +6,11 @@ interface Movie {
   title: string;
   genre: string;
   duration: number;
-  rating: number;
+  rating: number | null;
   poster_url: string;
-  synopsis: string;
+  synopsis: string | null;
   director: string;
-  cast_members: string;
+  cast_members: string | null;
   release_date: string;
   language: string;
 }
@@ -33,7 +33,6 @@ function MovieDetail() {
   const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
-    // BUG: No error handling - if movie doesn't exist, crashes
     fetch(`/api/movies/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -53,7 +52,8 @@ function MovieDetail() {
 
   if (loading) return <div>Loading...</div>;
 
-  // BUG: No null check on movie - will crash if movie is null
+  if (!movie) return <div>Movie not found.</div>;
+
   const dates = [...new Set(showtimes.map(s => s.date))];
   const filteredShowtimes = showtimes.filter(s => s.date === selectedDate);
 
@@ -63,26 +63,24 @@ function MovieDetail() {
       <div style={{ display: 'flex', gap: '20px' }}>
         <div>
           <img
-            src={movie!.poster_url}
-            alt={movie!.title}
+            src={movie.poster_url}
+            alt={movie.title}
             style={{ width: '300px', height: '450px', objectFit: 'cover', border: '2px solid #ccc' }}
           />
         </div>
         <div style={{ flex: 1 }}>
-          <h1 style={{ margin: '0 0 10px' }}>{movie!.title}</h1>
+          <h1 style={{ margin: '0 0 10px' }}>{movie.title}</h1>
           <p style={{ color: '#666' }}>
-            {movie!.genre} | {movie!.duration} min | {movie!.language} | ⭐ {movie!.rating.toFixed(1)}
+            {movie.genre} | {movie.duration} min | {movie.language} | ⭐ {movie.rating?.toFixed(1) ?? 'N/A'}
           </p>
           <p style={{ marginTop: '10px' }}>
-            <b>Director:</b> {movie!.director}
+            <b>Director:</b> {movie.director}
           </p>
           <p>
-            {/* BUG: Calling .split on potentially null cast_members - crashes for "Untitled Project X" */}
-            <b>Cast:</b> {movie!.cast_members.split(',').join(' | ')}
+            <b>Cast:</b> {(movie.cast_members ?? '').split(',').map(n => n.trim()).filter(Boolean).join(' | ')}
           </p>
           <p style={{ marginTop: '10px', lineHeight: '1.6' }}>
-            {/* BUG: Accessing .length on potentially null synopsis */}
-            <b>Synopsis:</b> {movie!.synopsis.length > 0 ? movie!.synopsis : 'No synopsis available'}
+            <b>Synopsis:</b> {movie.synopsis || 'No synopsis available'}
           </p>
         </div>
       </div>

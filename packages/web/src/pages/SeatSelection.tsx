@@ -46,18 +46,11 @@ function SeatSelection() {
   const toggleSeat = (seatId: number, isBooked: number) => {
     if (isBooked) return;
 
-    // BUG: State mutation - directly mutating array instead of creating new one
-    // This causes visual glitches when deselecting seats
     if (selectedSeats.includes(seatId)) {
-      const index = selectedSeats.indexOf(seatId);
-      selectedSeats.splice(index, 1);
-      setSelectedSeats(selectedSeats);
+      setSelectedSeats(selectedSeats.filter(id => id !== seatId));
     } else {
-      selectedSeats.push(seatId);
-      setSelectedSeats(selectedSeats);
+      setSelectedSeats([...selectedSeats, seatId]);
     }
-    // Force re-render with a hack (because state mutation doesn't trigger re-render properly)
-    setLoading(false);
   };
 
   const handleBooking = async () => {

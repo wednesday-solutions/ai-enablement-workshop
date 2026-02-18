@@ -214,6 +214,8 @@ git commit -m "chore: add ESLint, SonarJS, Prettier, Commitlint, Husky — quali
 
 > Goal: Systematically fix issues in priority order — crashes first, then performance, then security, then quality.
 
+> **Rule: every fix ships with unit and integration tests in the same PR.** A fix without a test is incomplete — the test proves the bug is gone and prevents regression. Only E2E tests are deferred to Phase 3. Set up Vitest + React Testing Library + Supertest before starting Phase 2 fixes (see Phase 3.1 setup below — do it first).
+
 ### Priority 1 — Crash Fixes (do these first, they block demos)
 
 | Ref | File | Fix |
@@ -274,11 +276,63 @@ pnpm --filter @stagepass/web add framer-motion
 
 ---
 
+## Phase 2.ci: CI Pipeline
+
+> Goal: Automate the quality gate immediately after the first tests land. This PR merges right after Phase 2a and before Phase 2b — so every subsequent PR is blocked from merging if lint or tests fail.
+
+### 2.ci.1 GitHub Actions workflow
+
+Create `.github/workflows/ci.yml`:
+
+```yaml
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test with coverage
+        run: pnpm -r test:coverage
+```
+
+### 2.ci.2 Enable branch protection on GitHub
+
+After the pipeline is green:
+- Require the `CI` check to pass before any PR can merge to `main`
+- Block direct pushes to `main`
+
+---
+
 ## Phase 3: Test Plan
 
-> Goal: Add meaningful test coverage, not just lines for vanity metrics.
+> Goal: E2E test coverage only. Unit and integration tests were written alongside each Phase 2 fix — do not defer them here.
 
 ### 3.1 Setup Vitest (unit + integration)
+
+Do this **before Phase 2a**, not here — tests must ship with each fix.
 
 ```bash
 pnpm --filter @stagepass/web add -D vitest @testing-library/react @testing-library/jest-dom @vitest/coverage-v8 jsdom
@@ -292,35 +346,15 @@ Add to each `package.json`:
 "test:coverage": "vitest run --coverage"
 ```
 
-### 3.2 Unit tests — Frontend
+### 3.2 E2E tests (Playwright)
 
-**Target files and what to test:**
+- Full booking flow in a real browser: browse → select showtime → select seats → confirm → verify booking appears in My Bookings
+- Auth flows: signup, login, logout, session persists after page refresh
+- Unauthenticated access redirects to login
+- "Untitled Project X" renders gracefully (not blank screen)
+- New user My Bookings shows empty state (not infinite spinner)
 
-| File | Tests |
-|------|-------|
-| `SeatSelection.tsx` | `toggleSeat` correctly adds/removes seat IDs without mutation |
-| `Home.tsx` | Filter logic returns correct subset; search is not blocking |
-| `AuthContext.tsx` | Login stores token; logout clears state; refresh rehydrates |
-| `MovieDetail.tsx` | Renders gracefully when `cast_members` or `synopsis` is null |
-| `MyBookings.tsx` | Shows empty state when booking array is empty, not a spinner |
-
-### 3.3 Unit tests — Backend
-
-| File | Tests |
-|------|-------|
-| `auth.ts` | Login with correct credentials returns JWT; wrong password returns 401 |
-| `auth.ts` | Signup hashes password — DB-stored value does not equal plain text input |
-| `bookings.ts` | POST `/bookings` without token returns 401 |
-| `bookings.ts` | POST `/bookings` marks seats as booked in DB |
-| `movies.ts` | GET `/movies?genre=Action` returns only Action movies |
-| `movies.ts` | GET `/movies?search=inception` returns matching movies |
-
-### 3.4 Integration tests
-
-- Full booking flow: browse → select showtime → select seats → confirm → verify in DB
-- Auth flow: signup → login → access protected route → refresh token
-
-### 3.5 Coverage targets
+### 3.3 Coverage targets
 
 | Package | Target |
 |---------|--------|
@@ -344,78 +378,11 @@ git commit -m "test: add unit and integration tests — 70% server coverage, 60%
 
 ---
 
-## Phase 4: CI Pipeline
-
-> Goal: Automate lint, test, and Sonar scan on every push.
-
-### 4.1 GitHub Actions workflow
-
-Create `.github/workflows/ci.yml`:
-
-```yaml
-name: CI
-
-on:
-  push:
-    branches: [main]
-  pull_request:
-    branches: [main]
-
-jobs:
-  build-and-test:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v4
-        with:
-          fetch-depth: 0   # needed for Sonar blame info
-
-      - uses: pnpm/action-setup@v3
-        with:
-          version: 10
-
-      - uses: actions/setup-node@v4
-        with:
-          node-version: 20
-          cache: pnpm
-
-      - name: Install dependencies
-        run: pnpm install
-
-      - name: Lint
-        run: pnpm lint
-
-      - name: Test with coverage
-        run: pnpm -r test:coverage
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@master
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-```
-
-### 4.2 Add branch protection rule on GitHub
-
-- Require CI to pass before merge
-- Require at least 1 reviewer
-- Block direct pushes to `main`
-
-### 4.3 Add Sonar Quality Gate to PR checks
-
-In SonarCloud project settings → Quality Gates → set as required status check on GitHub.
-
-**Quality Gate conditions:**
-- New coverage ≥ 60%
-- New duplications ≤ 3%
-- No new blocker/critical issues
-
----
-
-## Phase 5: Deployment Plan
+## Phase 4: Deployment Plan
 
 > Goal: Package and ship the app reliably.
 
-### 5.1 Add environment config
+### 4.1 Add environment config
 
 ```bash
 pnpm --filter @stagepass/server add dotenv
@@ -430,7 +397,7 @@ DATABASE_PATH=./stagepass.db
 NODE_ENV=development
 ```
 
-### 5.2 Dockerise
+### 4.2 Dockerise
 
 Create `packages/server/Dockerfile`:
 
@@ -484,7 +451,7 @@ services:
       - server
 ```
 
-### 5.3 Add build + deploy to CI
+### 4.3 Add build + deploy to CI
 
 Extend `.github/workflows/ci.yml` with a deploy job:
 
@@ -504,13 +471,14 @@ Extend `.github/workflows/ci.yml` with a deploy job:
 ## Execution Order Summary
 
 ```
-Phase 0  Understand       Read code, reproduce bugs, review docs/ISSUES_IN_THE_CODEBASE.md
-Phase 1  Tooling          ESLint + SonarJS + Prettier + Commitlint + Husky; capture lint baseline
-Phase 2  Fix              Crashes (2a) → ErrorBoundary (2b) → Performance (2c)
-                          → Security (2d) → Memoria UI (2e) → Code Quality (2f)
-Phase 3  Test             Unit (3a) + Integration (3b) + E2E Playwright (3c); coverage thresholds
-Phase 4  CI               GitHub Actions: lint → test → Sonar scan → quality gate
-Phase 5  Deploy           Docker + docker-compose + deploy job in CI
+Phase 0    Understand       Read code, reproduce bugs, review docs/ISSUES_IN_THE_CODEBASE.md
+Phase 1    Tooling          ESLint + SonarJS + Prettier + Commitlint + Husky; lint baseline
+Phase 2a   Fix + Tests      Crash fixes; unit tests in the same PR
+Phase 2.ci CI Pipeline      GitHub Actions — gates every subsequent PR automatically
+Phase 2b–f Fix + Tests      ErrorBoundary → Performance → Security → Memoria → Quality
+                             Each PR includes unit + integration tests for its own changes
+Phase 3    E2E Tests        Playwright; full user journeys in a real browser
+Phase 4    Deploy           Docker + docker-compose + deploy job in CI
 ```
 
 ---
@@ -527,5 +495,5 @@ The codebase is considered "done" when:
 - [ ] E2E tests cover the full booking flow in a real browser
 - [ ] Memoria design system applied to all 5 pages
 - [ ] Passwords hashed, JWT secret in `.env`, rate limiting on auth
-- [ ] CI pipeline passes on every push to `main`
+- [ ] CI pipeline is in place from Phase 2.ci and passes on every push to `main`
 - [ ] App runs via `docker compose up`

@@ -31,11 +31,12 @@ function MyBookings() {
       .then(res => res.json())
       .then(data => {
         setBookings(data);
-        // BUG: loading is only set to false if there are bookings
-        // If the array is empty, loading stays true forever (infinite spinner)
-        if (data.length > 0) {
-          setLoading(false);
-        }
+      })
+      .catch(() => {
+        // Network or parse error — leave bookings empty, loading will stop via finally
+      })
+      .finally(() => {
+        setLoading(false);
       });
   }, [user, token]);
 
@@ -52,7 +53,6 @@ function MyBookings() {
     return (
       <div style={{ textAlign: 'center', padding: '40px' }}>
         <div style={{ fontSize: '24px' }}>Loading your bookings...</div>
-        {/* BUG: This spinner will spin forever if user has no bookings */}
         <div style={{ fontSize: '48px', marginTop: '10px', animation: 'spin 1s linear infinite' }}>🔄</div>
         <style>{`
           @keyframes spin {

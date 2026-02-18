@@ -42,6 +42,16 @@ perf(Home): remove blocking while loop from search filter
 refactor(server): replace req: any with typed Express interfaces
 ```
 
+### Testing
+**Every change ships with unit and integration tests. No exceptions.**
+
+- Every bug fix gets a unit test that would have caught the bug — written in the same PR as the fix
+- Every new feature gets unit and integration tests covering the happy path and key edge cases — same PR
+- Every refactor gets tests verifying behaviour is unchanged — same PR
+- Phase 3 is for E2E tests only — unit and integration tests are never deferred
+
+A fix without a test is incomplete. A PR without tests will not be merged.
+
 ### Pull Requests
 Every branch gets a PR before it touches `main`. PRs should be small and focused — a reviewer should be able to understand the entire change in under 5 minutes.
 
@@ -50,7 +60,9 @@ Before raising a PR, verify:
 - [ ] No unrelated changes are bundled in
 - [ ] Commit messages are clean and follow the format above
 - [ ] No `console.log`, commented-out code, or `TODO` left behind
-- [ ] Existing tests still pass
+- [ ] **Unit and integration tests written for every change in this PR**
+- [ ] All tests pass
+- [ ] **CI pipeline is green** (from Phase 2a onwards — CI is set up immediately after the first tests land)
 
 Use AI to review your own PR before asking a human — prompt it with the diff and ask for a code review focused on correctness, security, and code quality.
 
@@ -58,22 +70,20 @@ Use AI to review your own PR before asking a human — prompt it with the diff a
 
 ## Session Map — One Row = One Claude Code Session = One PR
 
-Each session is self-contained. Start a new Claude Code session, tell it to work on the phase below, and it will create the branch, make the commits, and open a PR. Phases must be done in order within each group — fixes before tests, tests before CI.
+Each session is self-contained. Start a new Claude Code session, tell it to work on the phase below, and it will create the branch, make the commits, and open a PR. **Phases must be done in order** — CI lands immediately after the first tests so every subsequent PR is automatically gated.
 
 | Phase | Branch to create | Files touched | PR title |
 |-------|-----------------|---------------|----------|
 | **1** | `chore/tooling-baseline` | `eslint.config.js`, `.prettierrc`, `commitlint.config.js`, `.husky/`, root `package.json` | `chore: add ESLint, SonarJS, Prettier, Commitlint, Husky` |
-| **2a** | `fix/null-crashes` | `MovieDetail.tsx`, `MyBookings.tsx`, `SeatSelection.tsx` | `fix: null-check cast/synopsis, fix loading state, fix seat state mutation` |
-| **2b** | `feat/error-boundary` | `src/ErrorBoundary.tsx` (new), `App.tsx` | `feat: add ErrorBoundary around route tree` |
-| **2c** | `perf/remove-blocking-search` | `Home.tsx` | `perf: remove blocking while loop, add useMemo and useCallback` |
-| **2d** | `fix/auth-security` | `server/src/routes/auth.ts`, `server/src/seed.ts`, `.env.example`, `AuthContext.tsx` | `fix: hash passwords, move JWT secret to env, add rate limiting, persist token` |
-| **2e** | `feat/memoria-design-system` | All `pages/*.tsx`, `App.tsx`, `index.css` | `feat: apply Memoria dark design system across all pages` |
+| **2a** | `fix/null-crashes` | `MovieDetail.tsx`, `MyBookings.tsx`, `SeatSelection.tsx`, `MovieDetail.test.tsx`, `MyBookings.test.tsx`, `SeatSelection.test.tsx` | `fix: null-check cast/synopsis, fix loading state, fix seat state mutation` |
+| **ci** | `ci/github-actions` | `.github/workflows/ci.yml` (new) | `ci: add GitHub Actions pipeline — lint, test, coverage` |
+| **2b** | `feat/error-boundary` | `src/ErrorBoundary.tsx` (new), `App.tsx`, `ErrorBoundary.test.tsx` (new) | `feat: add ErrorBoundary around route tree` |
+| **2c** | `perf/remove-blocking-search` | `Home.tsx`, `Home.test.tsx` | `perf: remove blocking while loop, add useMemo and useCallback` |
+| **2d** | `fix/auth-security` | `server/src/routes/auth.ts`, `server/src/seed.ts`, `.env.example`, `AuthContext.tsx`, `auth.test.ts`, `auth.integration.test.ts`, `AuthContext.test.tsx` | `fix: hash passwords, move JWT secret to env, add rate limiting, persist token` |
+| **2e** | `feat/memoria-design-system` | All `pages/*.tsx`, `App.tsx`, `index.css`, snapshot tests | `feat: apply Memoria dark design system across all pages` |
 | **2f** | `refactor/code-quality` | `server/src/routes/*.ts`, `server/src/constants.ts` (new), `server/src/seed.ts` | `refactor: typed routes, extract magic strings, add seed guard` |
-| **3a** | `test/unit` | `**/*.test.tsx`, `**/*.test.ts` | `test: add unit tests for all components and server handlers` |
-| **3b** | `test/integration` | `server/src/**/*.integration.test.ts` | `test: add integration tests — full booking flow against in-memory DB` |
-| **3c** | `test/e2e` | `e2e/**/*.spec.ts` (new), `playwright.config.ts` (new) | `test: add Playwright E2E tests for full user journeys` |
-| **4** | `ci/github-actions` | `.github/workflows/ci.yml` (new) | `ci: add GitHub Actions pipeline — lint, test, coverage, Sonar` |
-| **5** | `chore/docker` | `packages/server/Dockerfile`, `packages/web/Dockerfile`, `docker-compose.yml` | `chore: add Dockerfiles and docker-compose for server and web` |
+| **3a** | `test/e2e` | `e2e/**/*.spec.ts` (new), `playwright.config.ts` (new) | `test: add Playwright E2E tests for full user journeys` |
+| **4** | `chore/docker` | `packages/server/Dockerfile`, `packages/web/Dockerfile`, `docker-compose.yml` | `chore: add Dockerfiles and docker-compose for server and web` |
 
 ### How to hand off to a new session
 
@@ -90,18 +100,16 @@ The session will have everything it needs from those two docs.
 | Phase | What | Est. Time (with AI) |
 |-------|------|---------------------|
 | 1 | Tooling — ESLint, SonarJS, Prettier, Commitlint, Husky | 30 min |
-| 2a | Fix null crashes and state mutation bugs | 20 min |
-| 2b | Add ErrorBoundary | 15 min |
-| 2c | Fix performance — blocking search | 15 min |
-| 2d | Fix security — auth hardening | 45 min |
-| 2e | Apply Memoria design system | 2 hrs |
+| 2a | Fix null crashes + unit tests | 30 min |
+| ci | CI pipeline — gates all subsequent PRs | 20 min |
+| 2b | Add ErrorBoundary + unit tests | 20 min |
+| 2c | Fix performance + unit tests | 20 min |
+| 2d | Fix security + unit + integration tests | 60 min |
+| 2e | Apply Memoria design system + snapshot tests | 2 hrs |
 | 2f | Code quality cleanup | 30 min |
-| 3a | Unit tests | 45 min |
-| 3b | Integration tests | 30 min |
-| 3c | E2E tests | 30 min |
-| 4 | CI pipeline | 20 min |
-| 5 | Docker + deployment | 20 min |
-| **Total** | | **~6 hrs** |
+| 3a | E2E tests — Playwright, full user journeys | 30 min |
+| 4 | Docker + deployment | 20 min |
+| **Total** | | **~6.5 hrs** |
 
 ---
 
@@ -189,15 +197,46 @@ These are the visible crashes. Fix them first.
 | `setLoading(false)` inside `if (data.length > 0)` | `MyBookings.tsx` | Move outside the guard |
 | `selectedSeats.splice()` mutates state directly | `SeatSelection.tsx` | Replace with `filter()` and spread |
 
-Each fix is a separate commit on a dedicated branch.
+Each fix is a separate commit. Each fix commit is followed by a test commit on the same branch.
+
+**Tests to write (same PR):**
+
+| Test file | Assertions |
+|-----------|-----------|
+| `MovieDetail.test.tsx` | Renders without crashing when `cast_members` is null; renders without crashing when `synopsis` is null; renders without crashing when `rating` is null |
+| `MyBookings.test.tsx` | Shows empty state (not spinner) when API returns an empty array |
+| `SeatSelection.test.tsx` | Clicking a selected seat removes it from state (no mutation); clicking an unselected seat adds it |
+
+### Phase CI — GitHub Actions Pipeline
+
+> **Must merge before Phase 2b.** Once the first tests exist, CI automates the quality gate so no subsequent PR can merge with failing lint, tests, or coverage regressions.
+
+Create `.github/workflows/ci.yml`. The pipeline runs on every push and PR to `main`:
+
+1. Install dependencies (`pnpm install`)
+2. Lint (`pnpm lint`)
+3. Test with coverage (`pnpm -r test:coverage`)
+4. Fail the build if coverage drops below thresholds
+
+After merging this PR, enable **branch protection** on `main` in GitHub → require the CI check to pass before any PR can merge.
+
+**No tests to write** — this phase is pipeline configuration only.
+
+---
 
 ### 2b — Error Boundary (Priority: High)
 
 Add a React `ErrorBoundary` wrapping the route tree so any future unhandled render error shows a friendly fallback instead of a blank white screen. This is one focused PR: the component itself, then wiring it into `App.tsx`.
 
+**Tests to write (same PR):**
+- `ErrorBoundary.test.tsx`: renders children when no error; renders fallback UI when a child throws; does not re-throw to the parent
+
 ### 2c — Performance (Priority: High)
 
 The blocking `while (Date.now() - start < 2000)` loop in `Home.tsx` freezes the entire browser tab on every keystroke. Remove it. Then add `useMemo` on the filtered movies computation and `useCallback` on event handlers to prevent unnecessary re-renders.
+
+**Tests to write (same PR):**
+- `Home.test.tsx`: search filter returns correct subset without blocking; genre filter returns correct subset; combined search + genre filter works correctly
 
 ### 2d — Security (Priority: High)
 
@@ -209,6 +248,11 @@ Work through these one at a time — each is its own commit:
 4. Add `express-rate-limit` on `/api/auth/*`
 5. Add `zod` validation on all request bodies
 6. Persist auth token to `localStorage`, rehydrate on mount
+
+**Tests to write (same PR):**
+- `auth.test.ts` (unit): signup hashes password (stored value !== plain text); login with correct credentials returns JWT; login with wrong password returns 401; protected route rejects missing/invalid token
+- `auth.integration.test.ts` (integration): full signup → login → access protected route flow against in-memory SQLite; confirms password is hashed in the DB
+- `AuthContext.test.tsx` (unit): login stores token in localStorage; logout clears localStorage; page reload rehydrates user from localStorage
 
 ### 2e — Memoria Design System (Priority: Medium)
 
@@ -223,6 +267,9 @@ Tackle one page per commit:
 6. My Bookings — hero amount, dark cards
 7. Booking Confirmation — spring modal entry animation
 
+**Tests to write (same PR):**
+- Snapshot tests for each page after styling is applied — one snapshot per page component. These lock in the design system classes and will fail if a future change accidentally removes Memoria styling.
+
 ### 2f — Code Quality (Priority: Low)
 
 These are refactors with no behaviour change. Each is its own commit:
@@ -234,39 +281,9 @@ These are refactors with no behaviour change. Each is its own commit:
 
 ## Phase 3 — Tests
 
-Add tests after fixes are merged so tests reflect correct behaviour, not bugs. Each test type is its own branch and PR.
+Unit and integration tests are written alongside every Phase 2 fix (see the "Tests to write" section under each phase). Phase 3 is for E2E tests only — the kind that require a real browser and the full running stack.
 
-### 3a — Unit Tests
-
-Test a single component or function in isolation. All external dependencies (API calls, DB) are mocked.
-
-**What to cover:**
-
-| File | Key assertions |
-|------|---------------|
-| `Home.tsx` | Filter by genre, search, combined filter, no blocking |
-| `MovieDetail.tsx` | Renders gracefully with null cast/synopsis fields |
-| `SeatSelection.tsx` | Toggle adds/removes seat without mutating state |
-| `MyBookings.tsx` | Shows empty state (not spinner) for empty response |
-| `Login.tsx` | Form validation, error display on failed login |
-| `AuthContext.tsx` | Login/logout/rehydration with localStorage |
-| `server/auth.ts` | Login/signup happy + error paths, rate limit |
-| `server/movies.ts` | Genre filter, search filter, 404 on unknown ID |
-| `server/bookings.ts` | Auth guard, seat booking, amount calculation |
-
-**Tools:** Vitest + React Testing Library (web), Vitest + Supertest (server)
-
-### 3b — Integration Tests
-
-Test multiple real layers together — Express router + real SQLite (in-memory). No mocks.
-
-**What to cover:**
-- Full booking flow: signup → login → get movies → select showtime → book seats → verify in DB
-- Auth flow: password is hashed in DB, JWT is valid, protected routes accept/reject tokens correctly
-
-**Tools:** Vitest + Supertest against an in-memory test DB (not `stagepass.db`)
-
-### 3c — E2E Tests
+### 3a — E2E Tests
 
 Run real user journeys in a real browser against the full running stack.
 
@@ -291,23 +308,7 @@ Run real user journeys in a real browser against the full running stack.
 
 ---
 
-## Phase 4 — CI Pipeline
-
-Once tests are in place, automate everything on push and PR. The pipeline should:
-
-1. Install dependencies
-2. Run lint
-3. Run unit + integration tests with coverage
-4. Run Sonar scan (upload coverage report)
-5. Run E2E tests against the full stack
-
-No PR should merge to `main` if the pipeline is red.
-
-**Tools:** GitHub Actions
-
----
-
-## Phase 5 — Docker + Deployment
+## Phase 4 — Docker + Deployment
 
 Containerise both the server and web app for consistent, reproducible deployments.
 
