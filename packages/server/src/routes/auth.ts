@@ -9,7 +9,9 @@ const JWT_SECRET = 'stagepass-secret-key-not-secure';
 router.post('/login', (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ? AND password = ?').get(email, password) as any;
+  const user = db
+    .prepare('SELECT * FROM users WHERE email = ? AND password = ?')
+    .get(email, password) as any;
 
   if (!user) {
     return res.status(401).json({ error: 'Invalid credentials' });
@@ -24,11 +26,13 @@ router.post('/signup', (req: Request, res: Response) => {
   const { name, email, password } = req.body;
 
   try {
-    const result = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(name, email, password);
+    const result = db
+      .prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)')
+      .run(name, email, password);
     const token = jwt.sign({ userId: result.lastInsertRowid }, JWT_SECRET, { expiresIn: '24h' });
     res.status(201).json({
       token,
-      user: { id: result.lastInsertRowid, name, email }
+      user: { id: result.lastInsertRowid, name, email },
     });
   } catch (e: any) {
     if (e.message.includes('UNIQUE')) {

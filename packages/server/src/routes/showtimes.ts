@@ -5,9 +5,9 @@ const router = Router();
 
 // GET showtimes for a movie
 router.get('/movie/:movieId', (req, res) => {
-  const showtimes = db.prepare(
-    'SELECT * FROM showtimes WHERE movie_id = ? ORDER BY date, time'
-  ).all(req.params.movieId);
+  const showtimes = db
+    .prepare('SELECT * FROM showtimes WHERE movie_id = ? ORDER BY date, time')
+    .all(req.params.movieId);
   res.json(showtimes);
 });
 
