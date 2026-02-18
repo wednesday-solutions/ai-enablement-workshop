@@ -1,6 +1,7 @@
 import React from 'react';
 import { BrowserRouter, Routes, Route, Link } from 'react-router-dom';
 import { AuthProvider, useAuth } from './AuthContext';
+import ErrorBoundary from './ErrorBoundary';
 import Home from './pages/Home';
 import MovieDetail from './pages/MovieDetail';
 import SeatSelection from './pages/SeatSelection';
@@ -38,14 +39,16 @@ function App() {
       <AuthProvider>
         <Header />
         <div style={{ padding: '20px' }}>
-          <Routes>
-            <Route path="/" element={<Home />} />
-            <Route path="/movie/:id" element={<MovieDetail />} />
-            <Route path="/seats/:showtimeId" element={<SeatSelection />} />
-            <Route path="/booking-confirmation/:bookingId" element={<BookingConfirmation />} />
-            <Route path="/bookings" element={<MyBookings />} />
-            <Route path="/login" element={<Login />} />
-          </Routes>
+          <ErrorBoundary>
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/movie/:id" element={<MovieDetail />} />
+              <Route path="/seats/:showtimeId" element={<SeatSelection />} />
+              <Route path="/booking-confirmation/:bookingId" element={<BookingConfirmation />} />
+              <Route path="/bookings" element={<MyBookings />} />
+              <Route path="/login" element={<Login />} />
+            </Routes>
+          </ErrorBoundary>
         </div>
       </AuthProvider>
     </BrowserRouter>

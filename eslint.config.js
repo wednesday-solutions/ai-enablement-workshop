@@ -51,6 +51,8 @@ export default tseslint.config(
       'sonarjs/no-ignored-return': 'warn',
       'sonarjs/no-ignored-exceptions': 'warn',
       'sonarjs/prefer-read-only-props': 'warn',
+      // React class render() legitimately returns JSX | ReactNode on different paths
+      'sonarjs/function-return-type': 'warn',
     },
   },
   {
