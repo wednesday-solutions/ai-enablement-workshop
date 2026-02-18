@@ -2,6 +2,7 @@ import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 import bcrypt from 'bcryptjs';
 import rateLimit from 'express-rate-limit';
+import { z } from 'zod';
 import db from '../db';
 
 const router = Router();
@@ -16,6 +17,17 @@ const authLimiter = rateLimit({
 
 router.use(authLimiter);
 
+const loginSchema = z.object({
+  email: z.string().email(),
+  password: z.string().min(1),
+});
+
+const signupSchema = z.object({
+  name: z.string().min(1),
+  email: z.string().email(),
+  password: z.string().min(8),
+});
+
 function getJwtSecret(): string {
   const secret = process.env.JWT_SECRET;
   if (!secret) throw new Error('JWT_SECRET environment variable is not set');
@@ -24,7 +36,9 @@ function getJwtSecret(): string {
 
 // POST login
 router.post('/login', async (req: Request, res: Response) => {
-  const { email, password } = req.body;
+  const parsed = loginSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  const { email, password } = parsed.data;
 
   const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
 
@@ -38,7 +52,9 @@ router.post('/login', async (req: Request, res: Response) => {
 
 // POST signup
 router.post('/signup', async (req: Request, res: Response) => {
-  const { name, email, password } = req.body;
+  const parsed = signupSchema.safeParse(req.body);
+  if (!parsed.success) return res.status(400).json({ error: parsed.error.issues[0].message });
+  const { name, email, password } = parsed.data;
 
   try {
     const hashed = await bcrypt.hash(password, 10);
