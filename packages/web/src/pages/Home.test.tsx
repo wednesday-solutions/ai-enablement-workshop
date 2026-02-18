@@ -40,52 +40,52 @@ afterEach(() => {
 describe('Home — search and genre filter', () => {
   it('renders all movies on initial load', async () => {
     renderHome()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText('Loading movies\u2026')).not.toBeInTheDocument())
     expect(screen.getByText('The Matrix')).toBeInTheDocument()
     expect(screen.getByText('Inception')).toBeInTheDocument()
     expect(screen.getByText('The Dark Knight')).toBeInTheDocument()
-    expect(screen.getByText('3 movies found')).toBeInTheDocument()
+    expect(screen.getByText('3 films')).toBeInTheDocument()
   })
 
   it('search filter returns only matching movies without blocking', async () => {
     renderHome()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText('Loading movies\u2026')).not.toBeInTheDocument())
 
     const start = Date.now()
-    await userEvent.type(screen.getByPlaceholderText('Search movies...'), 'matrix')
+    await userEvent.type(screen.getByPlaceholderText('Search movies\u2026'), 'matrix')
     const elapsed = Date.now() - start
 
     expect(screen.getByText('The Matrix')).toBeInTheDocument()
     expect(screen.queryByText('Inception')).not.toBeInTheDocument()
     expect(screen.queryByText('The Dark Knight')).not.toBeInTheDocument()
-    expect(screen.getByText('1 movies found')).toBeInTheDocument()
+    expect(screen.getByText('1 film')).toBeInTheDocument()
     // The old blocking loop took 2000ms per keystroke — this should complete well under 1s
     expect(elapsed).toBeLessThan(1000)
   })
 
   it('genre filter returns only movies of that genre', async () => {
     renderHome()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText('Loading movies\u2026')).not.toBeInTheDocument())
 
     await userEvent.selectOptions(screen.getByRole('combobox'), 'Action')
 
     expect(screen.getByText('The Dark Knight')).toBeInTheDocument()
     expect(screen.queryByText('The Matrix')).not.toBeInTheDocument()
     expect(screen.queryByText('Inception')).not.toBeInTheDocument()
-    expect(screen.getByText('1 movies found')).toBeInTheDocument()
+    expect(screen.getByText('1 film')).toBeInTheDocument()
   })
 
   it('combined search + genre filter returns only matching movies', async () => {
     renderHome()
-    await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
+    await waitFor(() => expect(screen.queryByText('Loading movies\u2026')).not.toBeInTheDocument())
 
     await userEvent.selectOptions(screen.getByRole('combobox'), 'Sci-Fi')
-    await userEvent.type(screen.getByPlaceholderText('Search movies...'), 'matrix')
+    await userEvent.type(screen.getByPlaceholderText('Search movies\u2026'), 'matrix')
 
     expect(screen.getByText('The Matrix')).toBeInTheDocument()
     expect(screen.queryByText('Inception')).not.toBeInTheDocument()
     expect(screen.queryByText('The Dark Knight')).not.toBeInTheDocument()
-    expect(screen.getByText('1 movies found')).toBeInTheDocument()
+    expect(screen.getByText('1 film')).toBeInTheDocument()
   })
 
   it('logs console.error when movies fetch fails', async () => {
