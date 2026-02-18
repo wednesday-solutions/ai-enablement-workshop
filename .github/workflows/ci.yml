@@ -24,13 +24,10 @@ jobs:
       - name: Install dependencies
         run: pnpm install
 
-      # Lint runs and reports issues, but does not fail the build yet.
-      # The codebase has 112 pre-existing lint errors captured in docs/lint-baseline.txt.
-      # These are addressed incrementally in Phase 2d (security) and Phase 2f (code quality).
-      # Remove continue-on-error once `pnpm lint` exits 0.
+      # Lint: 0 errors, ~109 warnings (pre-existing, tracked in docs/lint-baseline.txt).
+      # Threshold is --max-warnings 150. As Phase 2d/2f fix issues, the count will drop.
       - name: Lint
         run: pnpm lint
-        continue-on-error: true
 
       - name: Test with coverage
         run: pnpm --filter @stagepass/web test:coverage
