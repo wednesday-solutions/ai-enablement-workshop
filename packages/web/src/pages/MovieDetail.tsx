@@ -33,7 +33,6 @@ function MovieDetail() {
   const [selectedDate, setSelectedDate] = useState('');
 
   useEffect(() => {
-    // BUG: No error handling - if movie doesn't exist, crashes
     fetch(`/api/movies/${id}`)
       .then(res => res.json())
       .then(data => {
@@ -53,7 +52,8 @@ function MovieDetail() {
 
   if (loading) return <div>Loading...</div>;
 
-  // BUG: No null check on movie - will crash if movie is null
+  if (!movie) return <div>Movie not found.</div>;
+
   const dates = [...new Set(showtimes.map(s => s.date))];
   const filteredShowtimes = showtimes.filter(s => s.date === selectedDate);
 
@@ -63,24 +63,24 @@ function MovieDetail() {
       <div style={{ display: 'flex', gap: '20px' }}>
         <div>
           <img
-            src={movie!.poster_url}
-            alt={movie!.title}
+            src={movie.poster_url}
+            alt={movie.title}
             style={{ width: '300px', height: '450px', objectFit: 'cover', border: '2px solid #ccc' }}
           />
         </div>
         <div style={{ flex: 1 }}>
-          <h1 style={{ margin: '0 0 10px' }}>{movie!.title}</h1>
+          <h1 style={{ margin: '0 0 10px' }}>{movie.title}</h1>
           <p style={{ color: '#666' }}>
-            {movie!.genre} | {movie!.duration} min | {movie!.language} | ⭐ {movie!.rating?.toFixed(1) ?? 'N/A'}
+            {movie.genre} | {movie.duration} min | {movie.language} | ⭐ {movie.rating?.toFixed(1) ?? 'N/A'}
           </p>
           <p style={{ marginTop: '10px' }}>
-            <b>Director:</b> {movie!.director}
+            <b>Director:</b> {movie.director}
           </p>
           <p>
-            <b>Cast:</b> {(movie!.cast_members ?? '').split(',').join(' | ')}
+            <b>Cast:</b> {(movie.cast_members ?? '').split(',').map(n => n.trim()).filter(Boolean).join(' | ')}
           </p>
           <p style={{ marginTop: '10px', lineHeight: '1.6' }}>
-            <b>Synopsis:</b> {movie!.synopsis ?? 'No synopsis available'}
+            <b>Synopsis:</b> {movie.synopsis || 'No synopsis available'}
           </p>
         </div>
       </div>
