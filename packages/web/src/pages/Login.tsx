@@ -22,7 +22,7 @@ function Login() {
         await login(email, password);
       }
       navigate('/');
-    } catch (err) {
+    } catch {
       setError('Authentication failed. Please try again.');
     }
   };
