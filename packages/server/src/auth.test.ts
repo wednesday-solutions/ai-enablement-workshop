@@ -2,7 +2,7 @@
  * Unit tests for auth middleware (authenticateToken).
  * The db and bcrypt are mocked so these run without a real database.
  */
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import { Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
 

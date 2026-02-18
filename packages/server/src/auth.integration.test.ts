@@ -2,7 +2,7 @@
  * Integration tests — full signup → login → protected route flow.
  * Uses an in-memory SQLite database so no file I/O is needed.
  */
-import { describe, it, expect, vi, beforeAll } from 'vitest';
+import { describe, it, expect, vi } from 'vitest';
 import request from 'supertest';
 
 // Set JWT_SECRET before any module loads
@@ -31,6 +31,7 @@ describe('auth integration — signup → login → protected route', () => {
   const testUser = {
     name: 'Test User',
     email: 'test@example.com',
+    // eslint-disable-next-line sonarjs/no-hardcoded-passwords
     password: 'password123',
   };
 
@@ -53,13 +54,12 @@ describe('auth integration — signup → login → protected route', () => {
   it('POST /api/auth/login returns 401 with wrong password', async () => {
     const res = await request(app).post('/api/auth/login').send({
       email: testUser.email,
-      password: 'wrongpassword',
+      password: 'wrongpassword', // eslint-disable-line sonarjs/no-hardcoded-passwords
     });
     expect(res.status).toBe(401);
   });
 
   it('stored password is hashed — not the plain text value', async () => {
-    const Database = (await import('better-sqlite3')).default;
     // Access the mocked db
     const { default: db } = await import('./db');
     const user = db.prepare('SELECT password FROM users WHERE email = ?').get(testUser.email) as { password: string };
