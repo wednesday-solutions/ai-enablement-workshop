@@ -1,0 +1,33 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  build-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: pnpm/action-setup@v3
+        with:
+          version: 10
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+
+      - name: Install dependencies
+        run: pnpm install
+
+      # Lint: 0 errors, ~109 warnings (pre-existing, tracked in docs/lint-baseline.txt).
+      # Threshold is --max-warnings 150. As Phase 2d/2f fix issues, the count will drop.
+      - name: Lint
+        run: pnpm lint
+
+      - name: Test with coverage
+        run: pnpm --filter @stagepass/web test:coverage

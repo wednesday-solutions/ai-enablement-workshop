@@ -8,7 +8,7 @@
     "dev:web": "pnpm --filter @stagepass/web run dev",
     "build": "pnpm -r run build",
     "seed": "pnpm --filter @stagepass/server run seed",
-    "lint": "eslint packages/*/src",
+    "lint": "eslint packages/*/src --max-warnings 150",
     "format": "prettier --write packages/*/src",
     "format:check": "prettier --check packages/*/src",
     "prepare": "husky"

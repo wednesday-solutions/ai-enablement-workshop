@@ -3,7 +3,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { describe, it, expect, vi, beforeEach } from 'vitest'
 import MovieDetail from './MovieDetail'
 
-function renderMovieDetail(movieData: object) {
+function renderMovieDetail() {
   render(
     <MemoryRouter initialEntries={['/movie/99']}>
       <Routes>
@@ -43,35 +43,35 @@ const baseMovie = {
 describe('MovieDetail — null field handling', () => {
   it('renders without crashing when cast_members is null', async () => {
     mockFetch({ ...baseMovie, cast_members: null })
-    renderMovieDetail({})
+    renderMovieDetail()
     await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
     expect(screen.getByText('Test Movie')).toBeInTheDocument()
   })
 
   it('renders without crashing when synopsis is null', async () => {
     mockFetch({ ...baseMovie, synopsis: null })
-    renderMovieDetail({})
+    renderMovieDetail()
     await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
     expect(screen.getByText(/No synopsis available/)).toBeInTheDocument()
   })
 
   it('renders without crashing when rating is null', async () => {
     mockFetch({ ...baseMovie, rating: null })
-    renderMovieDetail({})
+    renderMovieDetail()
     await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
     expect(screen.getByText(/N\/A/)).toBeInTheDocument()
   })
 
   it('renders cast members separated by pipe when cast_members is populated', async () => {
     mockFetch(baseMovie)
-    renderMovieDetail({})
+    renderMovieDetail()
     await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
     expect(screen.getByText(/Actor One \| Actor Two/)).toBeInTheDocument()
   })
 
   it('shows "Movie not found." when API returns null', async () => {
     mockFetch(null as unknown as object)
-    renderMovieDetail({})
+    renderMovieDetail()
     await waitFor(() => expect(screen.queryByText('Loading...')).not.toBeInTheDocument())
     expect(screen.getByText('Movie not found.')).toBeInTheDocument()
   })
