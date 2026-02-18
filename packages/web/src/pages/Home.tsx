@@ -24,7 +24,10 @@ function Home() {
     const { signal } = controller;
 
     fetch('/api/movies', { signal })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then((data: Movie[]) => {
         setMovies(data);
         setLoading(false);
@@ -36,7 +39,10 @@ function Home() {
       });
 
     fetch('/api/movies/meta/genres', { signal })
-      .then(res => res.json())
+      .then(res => {
+        if (!res.ok) throw new Error(`HTTP error! status: ${res.status}`);
+        return res.json();
+      })
       .then((data: string[]) => setGenres(data))
       .catch((err: unknown) => {
         if (err instanceof Error && err.name === 'AbortError') return;
