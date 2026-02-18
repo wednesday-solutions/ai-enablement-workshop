@@ -282,21 +282,27 @@ Work through these one at a time — each is its own commit:
 - `auth.integration.test.ts` (integration): full signup → login → access protected route flow against in-memory SQLite; confirms password is hashed in the DB
 - `AuthContext.test.tsx` (unit): login stores token in localStorage; logout clears localStorage; page reload rehydrates user from localStorage
 
-### 2e — Memoria Design System (Priority: Medium)
+### 2e — Light Green Design System (Priority: Medium)
 
-Apply the [Memoria design system](https://gist.github.com/alichherawalla/8234538a50f9d089e0159c3e3634e17c) across the frontend. The core principles: dark monochromatic palette (`bg-neutral-950` base), numbers as heroes (`font-light text-white`), staggered animations via `framer-motion`, no accent colours, no inline styles.
+Apply the design system defined in [`docs/DESIGN_SYSTEM_GUIDE.md`](./DESIGN_SYSTEM_GUIDE.md) across the frontend. Core principles: light warm-neutral base (`#FFFFFF` / `#FAFAFA`), green-to-teal brand gradient used sparingly for accents and CTAs, `Instrument Serif` for headlines + `DM Sans` for body, multi-layer shadows for card depth, staggered animations via `framer-motion`.
+
+Install fonts in `index.html` (Google Fonts import) and `framer-motion`:
+
+```bash
+pnpm --filter @stagepass/web add framer-motion
+```
 
 Tackle one page per commit:
-1. Global theme + remove legacy CSS
-2. Header (extract to its own component)
-3. Home page — dark card grid, staggered entry, hero rating
-4. Movie Detail — blur-in transition, dark showtime pills
-5. Seat Selection — dark grid, white selected state
-6. My Bookings — hero amount, dark cards
+1. Global theme — fonts, CSS variables from the design system, remove legacy inline styles
+2. Header — extract to `components/Header.tsx`, apply nav styling from the guide
+3. Home page — white card grid with shadow lifts, brand gradient rating badge, staggered card entry
+4. Movie Detail — serif headline, blur-in transition, green pill showtimes
+5. Seat Selection — neutral grid, green selected state, brand gradient confirm button
+6. My Bookings — stat-display booking amount, white lifted cards
 7. Booking Confirmation — spring modal entry animation
 
 **Tests to write (same PR):**
-- Snapshot tests for each page after styling is applied — one snapshot per page component. These lock in the design system classes and will fail if a future change accidentally removes Memoria styling.
+- Snapshot tests for each page after styling is applied — one snapshot per page component. These lock in the design system styles and will fail if a future change accidentally removes them.
 
 ### 2f — Code Quality (Priority: Low)
 

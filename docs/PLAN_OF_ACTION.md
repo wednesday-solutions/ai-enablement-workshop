@@ -274,18 +274,19 @@ git commit -m "chore: add ESLint, SonarJS, Prettier, Commitlint, Husky — quali
 | 3.6 | `AuthContext.tsx` | Persist token to `localStorage`, rehydrate on mount |
 | 4.6 | All | Add `.env` + `dotenv`, add `.env.example`, add `.env` to `.gitignore` |
 
-### Priority 4 — Design System (Memoria)
+### Priority 4 — Design System (Light Green)
 
 > This is the "Write" phase showpiece. Transform the UI from ugly to polished.
 
-Apply the [Memoria design system](https://gist.github.com/alichherawalla/8234538a50f9d089e0159c3e3634e17c) across all pages:
+Apply the design system defined in [`docs/DESIGN_SYSTEM_GUIDE.md`](./DESIGN_SYSTEM_GUIDE.md) across all pages. Core principles: light warm-neutral base (`#FFFFFF` / `#FAFAFA`), green-to-teal brand gradient used sparingly for CTAs and accents, `Instrument Serif` for headlines + `DM Sans` for body, multi-layer card shadows, staggered scroll-driven animations.
 
-- **Global:** Switch to `bg-neutral-950` base, `text-white/neutral-*` hierarchy, no accent colors
-- **Home:** Dark card grid with poster, rating as hero number, staggered entry animation
-- **MovieDetail:** Split layout with blur-in animation, showtimes as styled pill buttons
-- **SeatSelection:** Dark grid, green/red/blue seat states, screen label at top
-- **MyBookings:** Timeline-style booking cards, booking amount as hero number
-- **All modals/overlays:** `BorderBeam` effect, spring-based 3D entry animation
+- **Global:** CSS variables from the design guide, Google Fonts import (`Instrument Serif` + `DM Sans`), remove legacy inline styles
+- **Header:** Extract to `components/Header.tsx`, apply nav layout from the guide
+- **Home:** White card grid with shadow lift on hover, brand gradient rating badge, staggered card entry animation
+- **MovieDetail:** Serif headline, blur-in transition, green pill showtime buttons
+- **SeatSelection:** Neutral grid, green selected state, brand gradient confirm button
+- **MyBookings:** Stat-display booking amount (large number, small label), lifted white cards
+- **BookingConfirmation:** Spring modal entry animation
 
 Install animation library:
 
@@ -522,7 +523,7 @@ The codebase is considered "done" when:
 - [ ] Commitlint + Husky enforce commit format and lint on every commit
 - [ ] Server test coverage ≥ 70%, web ≥ 60%
 - [ ] E2E tests cover the full booking flow in a real browser
-- [ ] Memoria design system applied to all 5 pages
+- [ ] Light green design system (docs/DESIGN_SYSTEM_GUIDE.md) applied to all pages
 - [ ] Passwords hashed, JWT secret in `.env`, rate limiting on auth
 - [ ] CI pipeline is in place from Phase 2.ci and passes on every push to `main`
 - [ ] App runs via `docker compose up`
