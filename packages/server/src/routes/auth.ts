@@ -1,31 +1,38 @@
 import { Router, Request, Response, NextFunction } from 'express';
 import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
 import db from '../db';
 
 const router = Router();
-const JWT_SECRET = 'stagepass-secret-key-not-secure';
+
+function getJwtSecret(): string {
+  const secret = process.env.JWT_SECRET;
+  if (!secret) throw new Error('JWT_SECRET environment variable is not set');
+  return secret;
+}
 
 // POST login
-router.post('/login', (req: Request, res: Response) => {
+router.post('/login', async (req: Request, res: Response) => {
   const { email, password } = req.body;
 
-  const user = db.prepare('SELECT * FROM users WHERE email = ? AND password = ?').get(email, password) as any;
+  const user = db.prepare('SELECT * FROM users WHERE email = ?').get(email) as any;
 
-  if (!user) {
+  if (!user || !(await bcrypt.compare(password, user.password))) {
     return res.status(401).json({ error: 'Invalid credentials' });
   }
 
-  const token = jwt.sign({ userId: user.id }, JWT_SECRET, { expiresIn: '24h' });
+  const token = jwt.sign({ userId: user.id }, getJwtSecret(), { expiresIn: '24h' });
   res.json({ token, user: { id: user.id, name: user.name, email: user.email } });
 });
 
 // POST signup
-router.post('/signup', (req: Request, res: Response) => {
+router.post('/signup', async (req: Request, res: Response) => {
   const { name, email, password } = req.body;
 
   try {
-    const result = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(name, email, password);
-    const token = jwt.sign({ userId: result.lastInsertRowid }, JWT_SECRET, { expiresIn: '24h' });
+    const hashed = await bcrypt.hash(password, 10);
+    const result = db.prepare('INSERT INTO users (name, email, password) VALUES (?, ?, ?)').run(name, email, hashed);
+    const token = jwt.sign({ userId: result.lastInsertRowid }, getJwtSecret(), { expiresIn: '24h' });
     res.status(201).json({
       token,
       user: { id: result.lastInsertRowid, name, email }
@@ -46,7 +53,7 @@ export function authenticateToken(req: any, res: Response, next: NextFunction) {
   if (!token) return res.status(401).json({ error: 'No token provided' });
 
   try {
-    const decoded = jwt.verify(token, JWT_SECRET) as any;
+    const decoded = jwt.verify(token, getJwtSecret()) as any;
     req.userId = decoded.userId;
     next();
   } catch {
