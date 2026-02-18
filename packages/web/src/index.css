@@ -1,0 +1,108 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Intentionally ugly base styles - no design system applied */
+body {
+  margin: 0;
+  font-family: Arial, sans-serif;
+  background: #f0f0f0;
+  color: #333;
+}
+
+a {
+  color: blue;
+  text-decoration: underline;
+}
+
+/* Ugly inconsistent card styles */
+.movie-card {
+  border: 2px solid #ccc;
+  padding: 10px;
+  margin: 8px;
+  background: white;
+  display: inline-block;
+  vertical-align: top;
+  width: 220px;
+}
+
+.movie-card img {
+  width: 100%;
+  height: 300px;
+  object-fit: cover;
+}
+
+/* Ugly form styles */
+input, select {
+  border: 1px solid #999;
+  padding: 6px;
+  margin: 4px;
+  font-size: 14px;
+}
+
+button {
+  background: #4444ff;
+  color: white;
+  border: none;
+  padding: 8px 16px;
+  cursor: pointer;
+  font-size: 14px;
+  margin: 4px;
+}
+
+button:hover {
+  background: #3333cc;
+}
+
+/* Seat grid - intentionally janky */
+.seat-grid {
+  display: inline-block;
+  margin: 20px auto;
+}
+
+.seat {
+  width: 32px;
+  height: 32px;
+  margin: 2px;
+  display: inline-block;
+  text-align: center;
+  line-height: 32px;
+  font-size: 11px;
+  cursor: pointer;
+  border: 1px solid #999;
+  background: #90EE90;
+}
+
+.seat.booked {
+  background: #ff6666;
+  cursor: not-allowed;
+}
+
+.seat.selected {
+  background: #4444ff;
+  color: white;
+}
+
+/* Header - plain ugly */
+.header {
+  background: #4444ff;
+  color: white;
+  padding: 10px 20px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header a {
+  color: white;
+  margin: 0 10px;
+  text-decoration: none;
+}
+
+/* Booking card */
+.booking-card {
+  border: 1px solid #ddd;
+  padding: 12px;
+  margin: 8px 0;
+  background: white;
+}
